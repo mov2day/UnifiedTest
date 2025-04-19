@@ -1,197 +1,224 @@
-# 🧪 UnifiedTest
+# 🔍 UnifiedTest
 
-**One plugin to unify and monitor test execution across all your frameworks.**
+**UnifiedTest** is a versatile **Java-based Gradle plugin** for advanced test automation observability and reporting. It supports **JUnit**, **TestNG**, and more—offering beautiful console reporting, JSON/HTML reports, and OpenTelemetry trace export.
 
-UnifiedTest is a pluggable, cross-framework listener and reporter for modern test automation stacks. Whether you're using JUnit, TestNG, Selenium, Appium, Karate, or others — UnifiedTest hooks into test lifecycles, offers beautiful console logs, and exports results to OpenTelemetry and beyond.
+> 📦 Publish once, run across all frameworks!
 
 ---
 
 ## 🚀 Features
 
-- 🔄 **Framework Agnostic**: Supports JUnit, TestNG, Appium, Selenium WebDriver, Karate, and more.
-- 🖥️ **Pretty Console Logging**: Real-time feedback on test execution.
-- 📊 **Detailed Summary**: Clean, actionable summary after test runs.
-- 📡 **Telemetry Publishing**: Pushes custom-tagged test data to OpenTelemetry backends.
-- 🛠️ **Configurable**: YAML/JSON/properties-based setup for flexible control.
-- ⚡ **Lightweight & CI/CD Ready**: Integrates with pipelines effortlessly.
+- 🔧 **Support for Multiple Frameworks**: JUnit4, JUnit5, TestNG (Spock, Cucumber in progress)
+- 🎯 **Dynamic Detection**: Auto-identifies framework at runtime or via config
+- 🖥️ **Pretty Console Output**: Live updates of test execution, duration, and result summary
+- 📊 **Reports**: Generate structured `JSON` and visual `HTML` reports
+- 📡 **OpenTelemetry Export**: Send test traces to Tempo, Jaeger, Zipkin, etc.
+- 🧩 **Extensible via SPI**: Add your own renderers, listeners, or exporters
+- ⚙️ **CI/CD Ready**: Integrates smoothly with GitHub Actions, GitLab, etc.
 
 ---
 
-## 🧩 MVP Features
+## 🔧 Installation
 
-1. **Test Lifecycle Monitoring**:
-   - Hooks into frameworks like JUnit, TestNG using listeners.
-   - Tracks test start, success, failure, and skip events.
-
-2. **Pretty Console Output**:
-   - Provides clear visual feedback during test runs.
-   - Summary view at the end with pass/fail stats.
-
-3. **Telemetry Publisher**:
-   - Sends test data to OpenTelemetry with customizable tags and config support.
-   - Uses run identifiers, suite names, environments from user config.
-
----
-
-## 🛠️ Getting Started
-
-### ✨ Add to Your Project
-
-#### Maven
-
-```xml
-<plugin>
-  <groupId>io.github.yourusername</groupId>
-  <artifactId>unifiedtest-plugin</artifactId>
-  <version>1.0.0</version>
-</plugin>
-```
-
-#### Gradle
-
-```groovy
+### 🛠 Gradle (Kotlin DSL)
+```kotlin
 plugins {
-    id 'io.github.yourusername.unifiedtest-plugin' version '1.0.0'
+    id("com.github.mov2day.unifiedtest") version "1.0.0"
 }
 ```
 
-> Replace `yourusername` with your GitHub handle or organization name.
+### 🛠 Gradle (Groovy DSL)
+```groovy
+plugins {
+    id 'com.github.mov2day.unifiedtest' version '1.0.0'
+}
+```
 
 ---
 
 ## ⚙️ Configuration
 
-Supports `.unifiedtest.yaml`, `.unifiedtest.json`, or `.unifiedtest.properties`.
+```kotlin
+unifiedTest {
+    framework = "auto" // or "junit", "testng"
+    
+    telemetry {
+        enabled = true
+        endpoint = "http://localhost:4317"
+        serviceName = "unified-test"
+    }
+    
+    reports {
+        jsonEnabled = true
+        htmlEnabled = true
+    }
 
-**Example (`.unifiedtest.yaml`):**
+    theme = "mocha" // "standard", "minimal", "mocha"
+}
+```
+
+---
+
+## ✅ Supported Test Frameworks
+
+| Framework | Status   | Listener Used             |
+|----------|----------|---------------------------|
+| JUnit 4  | ✅ Full   | `RunListener`             |
+| JUnit 5  | ✅ Full   | `TestExecutionListener`   |
+| TestNG   | ✅ Full   | `ITestListener`           |
+| Spock    | 🚧 In Dev | Groovy extensions         |
+| Cucumber | 🚧 Planned| Formatter/Reporter APIs   |
+
+---
+
+## 🧠 How It Works
+
+### 🔄 Dynamic Detection
+
+UnifiedTest auto-detects frameworks by scanning classpath signatures and test task setup. It uses:
+- Class presence checks (e.g., `org.junit.jupiter.api.Test`)
+- Runtime analysis
+- Optional manual override via `unifiedTest.framework = "junit"`
+
+### 🧩 Framework Adapters
+
+Each test framework has an internal adapter like so:
+
+```java
+public interface TestFrameworkAdapter {
+    boolean isApplicable(Project project);
+    void registerListeners(Test testTask);
+}
+```
+
+They hook into native listeners (e.g., `RunListener`, `ITestListener`) and stream execution data to a shared bus.
+
+---
+
+## 🖥 Console Reporting
+
+UnifiedTest listens to framework-native events and translates them to a **UnifiedTestEvent**. These events are then formatted by the `ConsoleReporter`.
+
+### Example Output:
+```
+[PASS] UserLoginTest.shouldLoginSuccessfully (42ms)
+[FAIL] CartTest.shouldNotAddOutOfStockItem (101ms)
+
+Summary:
+✔ 10 Passed   ❌ 2 Failed   ⏭ 0 Skipped
+```
+
+### Themes:
+- `standard` – Gradle-style output
+- `mocha` – Fancy symbols, emojis, duration
+- `minimal` – Summary only
+
+### Extending:
+```java
+public interface ConsoleRenderer {
+    void render(TestEvent event, PrintStream out);
+}
+```
+
+---
+
+## 🌐 OpenTelemetry Support
+
+Enable trace export to observability tools with a config switch:
+
+```kotlin
+unifiedTest.telemetry {
+    enabled = true
+    endpoint = "http://localhost:4317"
+}
+```
+
+### Exports Include:
+- Test name, duration, outcome
+- Framework, suite metadata
+- Exception info and thread details
+
+---
+
+## 📁 Report Generation
+
+| Format | Output Path                          |
+|--------|--------------------------------------|
+| JSON   | `build/unifiedTest/reports/results.json` |
+| HTML   | `build/unifiedTest/reports/index.html`  |
+
+HTML reports offer collapsible suites, duration tracking, and color-coded result sections.
+
+---
+
+## 🤖 CI/CD Integration
+
+### GitHub Actions Example
 ```yaml
-telemetry:
-  enabled: true
-  endpoint: http://otel-collector:4318
-  tags:
-    suite: Regression
-    environment: QA
+- name: Run Tests
+  run: ./gradlew test unifiedTestHtmlReport
 
-console:
-  theme: light
-  enabled: true
+- uses: actions/upload-artifact@v3
+  with:
+    name: reports
+    path: build/unifiedTest/reports/
 ```
 
 ---
 
-## 📈 Sample Output
+## 🧪 Architecture Diagram
 
-```
-🔄 STARTED: LoginTest.shouldLoginWithValidUser
-✅ PASSED: LoginTest.shouldLoginWithValidUser (118 ms)
-❌ FAILED: PaymentTest.shouldHandleInvalidCard (433 ms)
---------------------------------------------------------
-✔ Total: 25  | ✅ Passed: 22 | ❌ Failed: 3 | ⏭ Skipped: 0
-```
+![UnifiedTest Flow](docs/unifiedtest-diagram.png)
 
 ---
 
-## 🌐 OpenTelemetry Integration
+## 🧰 SPI for Extensibility
 
-Enable with `telemetry.enabled: true`. Automatically captures and exports:
+Extend UnifiedTest with your own:
 
-- Test case name & status
-- Duration
-- Environment, suite, and custom tags
-- Execution timestamps
+- Custom renderers
+- Export sinks
+- Adapter overrides
 
----
-
-## 🧱 Architecture
-
-```text
-+---------------------+
-|   Configuration     |
-| (YAML/JSON/Props)   |
-+---------------------+
-          |
-          v
-+---------------------+
-|  Plugin Bootstrap   |<-------------+
-+---------------------+              |
-          |                          |
-+---------+----------+              |
-|         |          |              |
-v         v          v              |
-Adapters  Event     Plugin Admin    |
-          Router       |            |
-           |           +------------+
-           v
-   +-------------+
-   |Event Filters|
-   +-------------+
-         |
-         v
-   +--------------+
-   |   Reporters  |
-   +--------------+
-         |
-         v
-+------------------+     +---------------+
-|  Interceptors    | --> | Data Publishers|
-+------------------+     +---------------+
-         |
-         v
-+----------------------------------+
-|        External Systems          |
-+----------------------------------+
+```java
+public interface TestFrameworkAdapter {
+    void registerListeners(Test testTask);
+}
 ```
 
 ---
 
-## 🔌 Extensibility
+## 📦 Publishing & Distribution
 
-- Build your own reporters
-- Hook into event filters
-- Add custom framework adapters
-- Push to any analytics or logging platform
+| Registry              | ID                                  |
+|-----------------------|--------------------------------------|
+| Maven Central         | `com.github.mov2day:unifiedtest`     |
+| Gradle Plugin Portal  | `com.github.mov2day.unifiedtest`     |
 
----
-
-## 📈 Roadmap (Expanded Features)
-
-### Framework Detection
-- Dynamic framework discovery
-- Hot reloading and configuration inheritance
-
-### Console & Telemetry
-- Interactive console mode
-- Test duration trends, flaky detection
-- Screenshot/video on failure
-
-### CI/CD
-- Quality gates and artifact association
-- CI feedback integrations
-
-### Analytics
-- Test impact & failure patterns
-- Quality health trends
-- Coverage correlation
+Domain name based on GitHub username: `com.github.mov2day`
 
 ---
 
-## 📝 License
+## 🛣 Roadmap
 
-UnifiedTest is licensed under the **MIT License** – see [LICENSE](./LICENSE).
+- [x] HTML/JSON reports
+- [x] OpenTelemetry export
+- [x] Dynamic framework detection
+- [ ] Spock & Cucumber support
+- [ ] Retry analyzer & flaky test tracking
+- [ ] VS Code Integration
+- [ ] GitLab + Azure CI Templates
 
 ---
 
-## 🤝 Contributing
+## 👨‍💻 Author
 
-We welcome contributions! Open an issue or submit a PR.
+Maintained by [**Muthu**](https://github.com/mov2day)  
+📫 Feedback? PRs welcome!  
+🧪 Test smarter, not harder!
 
 ---
 
-## 📎 Related
+## 📜 License
 
-- [OpenTelemetry](https://opentelemetry.io/)
-- [JUnit](https://junit.org/)
-- [TestNG](https://testng.org/)
-- [Selenium](https://www.selenium.dev/)
-- [Appium](https://appium.io/)
-- [Karate](https://karatelabs.io/)
+[MIT](LICENSE)
