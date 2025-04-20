@@ -1,3 +1,35 @@
+# UnifiedTest Agent
+
+UnifiedTest is a Java-based Gradle plugin for advanced test automation observability and reporting. It supports JUnit4, JUnit5, and TestNG. Spock and Cucumber are not included in this version.
+
+## Features
+- Dynamic detection of supported test frameworks (JUnit4, JUnit5, TestNG)
+- Pretty console output
+- JSON and HTML reporting
+- OpenTelemetry export (placeholder)
+- Extensible via SPI (Service Provider Interface)
+
+## Getting Started
+1. Apply the plugin in your Gradle project:
+   ```groovy
+   plugins {
+       id 'com.unifiedtest.agent' version '0.1.0-SNAPSHOT'
+   }
+   ```
+2. Run your tests as usual:
+   ```sh
+   ./gradlew test
+   ```
+3. View reports in `build/unifiedtest/` (JSON and HTML).
+
+## Extending UnifiedTest
+Implement the `UnifiedTestExtension` interface and register your implementation using Java's SPI mechanism to add custom reporting or observability logic.
+
+## Development
+- Run all tests: `./gradlew test`
+- Add new features in the modular packages: `framework`, `collector`, `reporting`, `extension`.
+- Contributions are welcome!
+
 # 🔍 UnifiedTest
 
 **UnifiedTest** is a versatile **Java-based Gradle plugin** for advanced test automation observability and reporting. It supports **JUnit**, **TestNG**, and more—offering beautiful console reporting, JSON/HTML reports, and OpenTelemetry trace export.

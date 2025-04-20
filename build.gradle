@@ -1,1 +1,85 @@
- ̑
+plugins {
+    id 'java-gradle-plugin'
+    id 'maven-publish'
+    id 'signing'
+    id 'com.gradle.plugin-publish' version '1.2.1'
+}
+
+group = 'com.github.mov2day'
+version = '0.1.0-SNAPSHOT'
+
+gradlePlugin {
+    plugins {
+        unifiedTestAgent {
+            id = 'com.github.mov2day.unifiedtest'
+            implementationClass = 'com.github.mov2day.unifiedtest.UnifiedTestAgentPlugin'
+            displayName = 'UnifiedTest Agent'
+            description = 'Advanced test automation observability and reporting for JUnit4, JUnit5, and TestNG.'
+            tags = ['test', 'report', 'observability', 'junit', 'testng', 'automation']
+        }
+    }
+}
+
+pluginBundle {
+    website = 'https://github.com/mov2day/UnifiedTest'
+    vcsUrl = 'https://github.com/mov2day/UnifiedTest.git'
+    description = 'Advanced test automation observability and reporting for JUnit4, JUnit5, and TestNG.'
+    tags = ['test', 'report', 'observability', 'junit', 'testng', 'automation']
+}
+
+publishing {
+    publications {
+        mavenJava(MavenPublication) {
+            from components.java
+            groupId = 'com.github.mov2day'
+            artifactId = 'unifiedtest-agent'
+            version = project.version
+            pom {
+                name = 'UnifiedTest Agent'
+                description = 'Advanced test automation observability and reporting for JUnit4, JUnit5, and TestNG.'
+                url = 'https://github.com/mov2day/UnifiedTest'
+                licenses {
+                    license {
+                        name = 'MIT License'
+                        url = 'https://opensource.org/licenses/MIT'
+                    }
+                }
+                developers {
+                    developer {
+                        id = 'mov2day'
+                        name = 'Muthu'
+                        email = 'your@email.com'
+                    }
+                }
+                scm {
+                    connection = 'scm:git:git://github.com/mov2day/UnifiedTest.git'
+                    developerConnection = 'scm:git:ssh://github.com:mov2day/UnifiedTest.git'
+                    url = 'https://github.com/mov2day/UnifiedTest'
+                }
+            }
+        }
+    }
+}
+
+signing {
+    sign publishing.publications.mavenJava
+}
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    implementation 'junit:junit:4.13.2'
+    implementation 'org.junit.jupiter:junit-jupiter-api:5.8.2'
+    implementation 'org.junit.platform:junit-platform-launcher:1.8.2'
+    implementation 'org.testng:testng:7.4.0'
+    testImplementation 'junit:junit:4.13.2'
+    testImplementation 'org.junit.jupiter:junit-jupiter:5.8.2'
+    testImplementation 'org.testng:testng:7.4.0'
+    testImplementation 'org.mockito:mockito-core:4.0.0'
+}
+
+test {
+    useJUnitPlatform()
+}
