@@ -13,7 +13,7 @@ UnifiedTest is a Java-based Gradle plugin for advanced test automation observabi
 1. Apply the plugin in your Gradle project:
    ```groovy
    plugins {
-       id 'com.unifiedtest.agent' version '0.1.0-SNAPSHOT'
+       id 'com.unifiedtest' version '0.1.0-SNAPSHOT'
    }
    ```
 2. Run your tests as usual:

@@ -1,4 +1,4 @@
-package com.github.mov2day.unifiedtest.agent.collector;
+package com.github.mov2day.unifiedtest.collector;
 
 import org.gradle.api.tasks.testing.TestDescriptor;
 import org.gradle.api.tasks.testing.TestResult;

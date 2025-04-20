@@ -1,12 +1,12 @@
-package com.github.mov2day.unifiedtest.agent.reporting;
+package com.github.mov2day.unifiedtest.reporting;
 
 import org.testng.ITestContext;
 import org.testng.ITestListener;
 import org.testng.ITestResult;
 import java.util.concurrent.atomic.AtomicInteger;
-import com.github.mov2day.unifiedtest.agent.collector.UnifiedTestResultCollector;
-import com.github.mov2day.unifiedtest.agent.collector.UnifiedTestResult;
-import com.github.mov2day.unifiedtest.agent.reporting.ConsoleReporter;
+import com.github.mov2day.unifiedtest.collector.UnifiedTestResultCollector;
+import com.github.mov2day.unifiedtest.collector.UnifiedTestResult;
+import com.github.mov2day.unifiedtest.reporting.ConsoleReporter;
 
 public class UnifiedTestNGListener implements ITestListener {
     private final UnifiedTestResultCollector collector;

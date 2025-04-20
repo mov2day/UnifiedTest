@@ -1,10 +1,10 @@
-package com.github.mov2day.unifiedtest.agent.framework;
+package com.github.mov2day.unifiedtest.framework;
 
 import org.gradle.api.Project;
 import org.gradle.api.tasks.testing.Test;
-import com.github.mov2day.unifiedtest.agent.collector.UnifiedTestResultCollector;
-import com.github.mov2day.unifiedtest.agent.reporting.ConsoleReporter;
-import com.github.mov2day.unifiedtest.agent.reporting.UnifiedJUnit5Listener;
+import com.github.mov2day.unifiedtest.collector.UnifiedTestResultCollector;
+import com.github.mov2day.unifiedtest.reporting.ConsoleReporter;
+import com.github.mov2day.unifiedtest.reporting.UnifiedJUnit5Listener;
 
 public class JUnit5Adapter implements TestFrameworkAdapter {
     @Override

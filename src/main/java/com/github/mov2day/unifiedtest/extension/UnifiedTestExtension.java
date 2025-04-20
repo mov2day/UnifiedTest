@@ -1,4 +1,4 @@
-package com.github.mov2day.unifiedtest;
+package com.github.mov2day.unifiedtest.extension;
 
 import org.gradle.api.Project;
 import org.gradle.api.tasks.testing.Test;

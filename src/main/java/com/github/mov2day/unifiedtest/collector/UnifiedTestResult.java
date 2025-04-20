@@ -1,4 +1,4 @@
-package com.github.mov2day.unifiedtest.agent.collector;
+package com.github.mov2day.unifiedtest.collector;
 
 public class UnifiedTestResult {
     public final String className;

@@ -1,6 +1,6 @@
-package com.github.mov2day.unifiedtest.agent.extension;
+package com.github.mov2day.unifiedtest.extension;
 
-import com.github.mov2day.unifiedtest.agent.UnifiedTestExtension;
+import com.github.mov2day.unifiedtest.UnifiedTestExtension;
 import org.gradle.api.Project;
 import org.gradle.api.tasks.testing.Test;
 import java.util.ServiceLoader;

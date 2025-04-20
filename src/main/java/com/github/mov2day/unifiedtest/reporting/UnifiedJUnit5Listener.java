@@ -1,13 +1,13 @@
-package com.github.mov2day.unifiedtest.agent.reporting;
+package com.github.mov2day.unifiedtest.reporting;
 
 import org.junit.platform.launcher.TestExecutionListener;
 import org.junit.platform.launcher.TestIdentifier;
 import org.junit.platform.launcher.TestPlan;
 import org.junit.platform.engine.TestExecutionResult;
 import java.util.concurrent.atomic.AtomicInteger;
-import com.github.mov2day.unifiedtest.agent.collector.UnifiedTestResultCollector;
-import com.github.mov2day.unifiedtest.agent.collector.UnifiedTestResult;
-import com.github.mov2day.unifiedtest.agent.reporting.ConsoleReporter;
+import com.github.mov2day.unifiedtest.collector.UnifiedTestResultCollector;
+import com.github.mov2day.unifiedtest.collector.UnifiedTestResult;
+import com.github.mov2day.unifiedtest.reporting.ConsoleReporter;
 
 public class UnifiedJUnit5Listener implements TestExecutionListener {
     private final UnifiedTestResultCollector collector;

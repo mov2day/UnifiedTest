@@ -1,4 +1,4 @@
-package com.github.mov2day.unifiedtest.agent.reporting;
+package com.github.mov2day.unifiedtest.reporting;
 
 import org.gradle.api.Project;
 import org.gradle.api.tasks.testing.Test;

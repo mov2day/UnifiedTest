@@ -1,6 +1,6 @@
-package com.github.mov2day.unifiedtest.agent.reporting;
+package com.github.mov2day.unifiedtest.reporting;
 
-import com.github.mov2day.unifiedtest.agent.collector.UnifiedTestResult;
+import com.github.mov2day.unifiedtest.collector.UnifiedTestResult;
 import org.gradle.api.Project;
 import java.io.File;
 import java.io.FileWriter;

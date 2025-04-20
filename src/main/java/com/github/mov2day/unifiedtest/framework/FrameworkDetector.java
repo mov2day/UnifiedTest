@@ -1,4 +1,4 @@
-package com.github.mov2day.unifiedtest.agent.framework;
+package com.github.mov2day.unifiedtest.framework;
 
 import org.gradle.api.Project;
 import org.gradle.api.artifacts.Configuration;
