@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>UnifiedTest Agent</title>
+  <style>
+    body { font-family: system-ui, sans-serif; margin: 2rem; background: #fafbfc; color: #222; }
+    h1, h2, h3 { color: #2d3a4a; }
+    pre, code { background: #f4f4f4; border-radius: 4px; padding: 0.2em 0.4em; }
+    pre { padding: 1em; overflow-x: auto; }
+    table { border-collapse: collapse; margin: 1em 0; }
+    th, td { border: 1px solid #ccc; padding: 0.5em 1em; }
+    th { background: #f0f0f0; }
+    img { max-width: 100%; }
+    .emoji { font-size: 1.2em; }
+  </style>
+</head>
+<body>
+  <h1>UnifiedTest Agent</h1>
+  <p>UnifiedTest is a Java-based Gradle plugin for advanced test automation observability and reporting. It supports JUnit4, JUnit5, and TestNG. Spock and Cucumber are not included in this version.</p>
+
+  <h2>Features</h2>
+  <ul>
+    <li>Dynamic detection of supported test frameworks (JUnit4, JUnit5, TestNG)</li>
+    <li>Pretty console output</li>
+    <li>JSON and HTML reporting</li>
+    <li>OpenTelemetry export (placeholder)</li>
+    <li>Extensible via SPI (Service Provider Interface)</li>
+  </ul>
+
+  <h2>Getting Started</h2>
+  <ol>
+    <li>Apply the plugin in your Gradle project:
+      <pre><code>plugins {
+    id 'com.unifiedtest' version '0.1.0-SNAPSHOT'
+}</code></pre>
+    </li>
+    <li>Run your tests as usual:
+      <pre><code>./gradlew test</code></pre>
+    </li>
+    <li>View reports in <code>build/unifiedtest/</code> (JSON and HTML).</li>
+  </ol>
+
+  <h2>Extending UnifiedTest</h2>
+  <p>Implement the <code>UnifiedTestExtension</code> interface and register your implementation using Java's SPI mechanism to add custom reporting or observability logic.</p>
+
+  <h2>Development</h2>
+  <ul>
+    <li>Run all tests: <code>./gradlew test</code></li>
+    <li>Add new features in the modular packages: <code>framework</code>, <code>collector</code>, <code>reporting</code>, <code>extension</code>.</li>
+    <li>Contributions are welcome!</li>
+  </ul>
+
+  <hr>
+
+  <h1>🔍 UnifiedTest</h1>
+  <p><strong>UnifiedTest</strong> is a versatile <strong>Java-based Gradle plugin</strong> for advanced test automation observability and reporting. It supports <strong>JUnit</strong>, <strong>TestNG</strong>, and more—offering beautiful console reporting, JSON/HTML reports, and OpenTelemetry trace export.</p>
+  <blockquote>📦 Publish once, run across all frameworks!</blockquote>
+
+  <h2>🚀 Features</h2>
+  <ul>
+    <li>🔧 <strong>Support for Multiple Frameworks</strong>: JUnit4, JUnit5, TestNG (Spock, Cucumber in progress)</li>
+    <li>🎯 <strong>Dynamic Detection</strong>: Auto-identifies framework at runtime or via config</li>
+    <li>🖥️ <strong>Pretty Console Output</strong>: Live updates of test execution, duration, and result summary</li>
+    <li>📊 <strong>Reports</strong>: Generate structured <code>JSON</code> and visual <code>HTML</code> reports</li>
+    <li>📡 <strong>OpenTelemetry Export</strong>: Send test traces to Tempo, Jaeger, Zipkin, etc.</li>
+    <li>🧩 <strong>Extensible via SPI</strong>: Add your own renderers, listeners, or exporters</li>
+    <li>⚙️ <strong>CI/CD Ready</strong>: Integrates smoothly with GitHub Actions, GitLab, etc.</li>
+  </ul>
+
+  <h2>🔧 Installation</h2>
+  <h3>🛠 Gradle (Kotlin DSL)</h3>
+  <pre><code>plugins {
+    id("com.github.mov2day.unifiedtest") version "1.0.0"
+}</code></pre>
+  <h3>🛠 Gradle (Groovy DSL)</h3>
+  <pre><code>plugins {
+    id 'com.github.mov2day.unifiedtest' version '1.0.0'
+}</code></pre>
+
+  <h2>⚙️ Configuration</h2>
+  <pre><code>unifiedTest {
+    framework = "auto" // or "junit", "testng"
+    
+    telemetry {
+        enabled = true
+        endpoint = "http://localhost:4317"
+        serviceName = "unified-test"
+    }
+    
+    reports {
+        jsonEnabled = true
+        htmlEnabled = true
+    }
+
+    theme = "mocha" // "standard", "minimal", "mocha"
+}</code></pre>
+
+  <h2>✅ Supported Test Frameworks</h2>
+  <table>
+    <tr><th>Framework</th><th>Status</th><th>Listener Used</th></tr>
+    <tr><td>JUnit 4</td><td>✅ Full</td><td><code>RunListener</code></td></tr>
+    <tr><td>JUnit 5</td><td>✅ Full</td><td><code>TestExecutionListener</code></td></tr>
+    <tr><td>TestNG</td><td>✅ Full</td><td><code>ITestListener</code></td></tr>
+    <tr><td>Spock</td><td>🚧 In Dev</td><td>Groovy extensions</td></tr>
+    <tr><td>Cucumber</td><td>🚧 Planned</td><td>Formatter/Reporter APIs</td></tr>
+  </table>
+
+  <h2>🧠 How It Works</h2>
+  <h3>🔄 Dynamic Detection</h3>
+  <p>UnifiedTest auto-detects frameworks by scanning classpath signatures and test task setup. It uses:</p>
+  <ul>
+    <li>Class presence checks (e.g., <code>org.junit.jupiter.api.Test</code>)</li>
+    <li>Runtime analysis</li>
+    <li>Optional manual override via <code>unifiedTest.framework = "junit"</code></li>
+  </ul>
+  <h3>🧩 Framework Adapters</h3>
+  <p>Each test framework has an internal adapter like so:</p>
+  <pre><code>public interface TestFrameworkAdapter {
+    boolean isApplicable(Project project);
+    void registerListeners(Test testTask);
+}</code></pre>
+  <p>They hook into native listeners (e.g., <code>RunListener</code>, <code>ITestListener</code>) and stream execution data to a shared bus.</p>
+
+  <h2>🖥 Console Reporting</h2>
+  <p>UnifiedTest listens to framework-native events and translates them to a <strong>UnifiedTestEvent</strong>. These events are then formatted by the <code>ConsoleReporter</code>.</p>
+  <h3>Example Output:</h3>
+  <pre><code>[PASS] UserLoginTest.shouldLoginSuccessfully (42ms)
+[FAIL] CartTest.shouldNotAddOutOfStockItem (101ms)
+
+Summary:
+✔ 10 Passed   ❌ 2 Failed   ⏭ 0 Skipped
+</code></pre>
+  <h3>Themes:</h3>
+  <ul>
+    <li><code>standard</code> – Gradle-style output</li>
+    <li><code>mocha</code> – Fancy symbols, emojis, duration</li>
+    <li><code>minimal</code> – Summary only</li>
+  </ul>
+  <h3>Extending:</h3>
+  <pre><code>public interface ConsoleRenderer {
+    void render(TestEvent event, PrintStream out);
+}</code></pre>
+
+  <h2>🌐 OpenTelemetry Support</h2>
+  <p>Enable trace export to observability tools with a config switch:</p>
+  <pre><code>unifiedTest.telemetry {
+    enabled = true
+    endpoint = "http://localhost:4317"
+}</code></pre>
+  <h3>Exports Include:</h3>
+  <ul>
+    <li>Test name, duration, outcome</li>
+    <li>Framework, suite metadata</li>
+    <li>Exception info and thread details</li>
+  </ul>
+
+  <h2>📁 Report Generation</h2>
+  <table>
+    <tr><th>Format</th><th>Output Path</th></tr>
+    <tr><td>JSON</td><td><code>build/unifiedTest/reports/results.json</code></td></tr>
+    <tr><td>HTML</td><td><code>build/unifiedTest/reports/index.html</code></td></tr>
+  </table>
+  <p>HTML reports offer collapsible suites, duration tracking, and color-coded result sections.</p>
+
+  <h2>🤖 CI/CD Integration</h2>
+  <h3>GitHub Actions Example</h3>
+  <pre><code>- name: Run Tests
+  run: ./gradlew test unifiedTestHtmlReport
+
+- uses: actions/upload-artifact@v3
+  with:
+    name: reports
+    path: build/unifiedTest/reports/
+</code></pre>
+
+  <h2>🧪 Architecture Diagram</h2>
+  <img src="docs/unifiedtest-diagram.png" alt="UnifiedTest Flow">
+
+  <h2>🧰 SPI for Extensibility</h2>
+  <p>Extend UnifiedTest with your own:</p>
+  <ul>
+    <li>Custom renderers</li>
+    <li>Export sinks</li>
+    <li>Adapter overrides</li>
+  </ul>
+  <pre><code>public interface TestFrameworkAdapter {
+    void registerListeners(Test testTask);
+}</code></pre>
+
+  <h2>📦 Publishing & Distribution</h2>
+  <table>
+    <tr><th>Registry</th><th>ID</th></tr>
+    <tr><td>Maven Central</td><td><code>com.github.mov2day:unifiedtest</code></td></tr>
+    <tr><td>Gradle Plugin Portal</td><td><code>com.github.mov2day.unifiedtest</code></td></tr>
+  </table>
+  <p>Domain name based on GitHub username: <code>com.github.mov2day</code></p>
+
+  <h2>🛣 Roadmap</h2>
+  <ul>
+    <li>[x] HTML/JSON reports</li>
+    <li>[x] OpenTelemetry export</li>
+    <li>[x] Dynamic framework detection</li>
+    <li>[ ] Spock &amp; Cucumber support</li>
+    <li>[ ] Retry analyzer &amp; flaky test tracking</li>
+    <li>[ ] VS Code Integration</li>
+    <li>[ ] GitLab + Azure CI Templates</li>
+  </ul>
+
+  <h2>👨‍💻 Author</h2>
+  <p>Maintained by <a href="https://github.com/mov2day"><strong>Muthu</strong></a><br>
+  📫 Feedback? PRs welcome!<br>
+  🧪 Test smarter, not harder!</p>
+
+  <h2>📜 License</h2>
+  <p><a href="LICENSE">MIT</a></p>
+</body>
+</html>
