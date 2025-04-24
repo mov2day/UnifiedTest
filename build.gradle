@@ -6,7 +6,7 @@ plugins {
 }
 
 group = 'io.github.mov2day'
-version = '0.1.0'
+version = '0.1.1'
 
 gradlePlugin {
     website.set('https://github.com/mov2day/UnifiedTest')
