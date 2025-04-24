@@ -6,6 +6,7 @@ import io.github.mov2day.unifiedtest.collector.UnifiedTestResultCollector;
 import io.github.mov2day.unifiedtest.reporting.ConsoleReporter;
 import io.github.mov2day.unifiedtest.reporting.UnifiedJUnit5Listener;
 import io.github.mov2day.unifiedtest.reporting.PrettyConsoleTestListener;
+import io.github.mov2day.unifiedtest.UnifiedTestAgentPlugin;
 
 public class JUnit5Adapter implements TestFrameworkAdapter {
     @Override
@@ -19,9 +20,17 @@ public class JUnit5Adapter implements TestFrameworkAdapter {
         // Initialize the static collector and reporter in UnifiedJUnit5Listener
         UnifiedJUnit5Listener.setCollectorAndReporter(collector, reporter);
         // Add the test listener using Gradle's test listener API
-        testTask.addTestListener(new PrettyConsoleTestListener(project, "standard"));
+        testTask.addTestListener(new PrettyConsoleTestListener(project, getThemeFromConfig(project)));
     }
 
     @Override
     public String getName() { return "JUnit5"; }
+    
+    private String getThemeFromConfig(Project project) {
+        try {
+            return project.getExtensions().getByType(UnifiedTestAgentPlugin.UnifiedTestExtensionConfig.class).getTheme().get();
+        } catch (Exception e) {
+            return "standard"; // Default fallback
+        }
+    }
 }
