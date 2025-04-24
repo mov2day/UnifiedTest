@@ -8,12 +8,21 @@ import org.gradle.api.tasks.testing.TestResult;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.Map;
 
+/**
+ * Provides pretty-printed console output for test execution events.
+ * Supports different themes for console output formatting.
+ */
 public class PrettyConsoleTestListener implements TestListener {
     private final Project project;
     private final String theme;
     private final Map<String, String> testStatus = new ConcurrentHashMap<>();
     private int total = 0, passed = 0, failed = 0, skipped = 0;
 
+    /**
+     * Creates a new PrettyConsoleTestListener with the specified theme.
+     * @param project the Gradle project
+     * @param theme the console output theme to use
+     */
     public PrettyConsoleTestListener(Project project, String theme) {
         this.project = project;
         this.theme = theme;

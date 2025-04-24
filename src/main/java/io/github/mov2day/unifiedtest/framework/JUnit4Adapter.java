@@ -8,6 +8,10 @@ import io.github.mov2day.unifiedtest.reporting.UnifiedJUnit4Listener;
 import io.github.mov2day.unifiedtest.reporting.PrettyConsoleTestListener;
 import io.github.mov2day.unifiedtest.UnifiedTestAgentPlugin;
 
+/**
+ * JUnit 4 framework adapter for UnifiedTest.
+ * Handles registration of test listeners and configuration for JUnit 4 test execution.
+ */
 public class JUnit4Adapter implements TestFrameworkAdapter {
     @Override
     public boolean isApplicable(Project project) {

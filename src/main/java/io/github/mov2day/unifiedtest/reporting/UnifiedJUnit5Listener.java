@@ -7,8 +7,11 @@ import org.junit.platform.engine.TestExecutionResult;
 import java.util.concurrent.atomic.AtomicInteger;
 import io.github.mov2day.unifiedtest.collector.UnifiedTestResultCollector;
 import io.github.mov2day.unifiedtest.collector.UnifiedTestResult;
-import io.github.mov2day.unifiedtest.reporting.ConsoleReporter;
 
+/**
+ * JUnit 5 test execution listener that integrates with UnifiedTest reporting.
+ * Captures test execution events and forwards them to the UnifiedTest collector and reporter.
+ */
 public class UnifiedJUnit5Listener implements TestExecutionListener {
     private final UnifiedTestResultCollector collector;
     private final ConsoleReporter reporter;
@@ -20,15 +23,29 @@ public class UnifiedJUnit5Listener implements TestExecutionListener {
     private static UnifiedTestResultCollector staticCollector;
     private static ConsoleReporter staticReporter;
 
+    /**
+     * Sets the test result collector and console reporter for this listener.
+     * Must be called before test execution starts.
+     * @param collector the test result collector
+     * @param reporter the console reporter
+     */
     public static void setCollectorAndReporter(UnifiedTestResultCollector collector, ConsoleReporter reporter) {
         staticCollector = collector;
         staticReporter = reporter;
     }
 
+    /**
+     * Creates a new listener with default configuration.
+     */
     public UnifiedJUnit5Listener() {
         this(staticCollector, staticReporter);
     }
 
+    /**
+     * Creates a new listener with the specified collector and reporter.
+     * @param collector the test result collector
+     * @param reporter the console reporter
+     */
     public UnifiedJUnit5Listener(UnifiedTestResultCollector collector, ConsoleReporter reporter) {
         this.collector = collector;
         this.reporter = reporter;

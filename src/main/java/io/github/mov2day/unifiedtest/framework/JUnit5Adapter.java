@@ -8,6 +8,10 @@ import io.github.mov2day.unifiedtest.reporting.UnifiedJUnit5Listener;
 import io.github.mov2day.unifiedtest.reporting.PrettyConsoleTestListener;
 import io.github.mov2day.unifiedtest.UnifiedTestAgentPlugin;
 
+/**
+ * JUnit 5 (Jupiter) framework adapter for UnifiedTest.
+ * Handles registration of test listeners and configuration for JUnit 5 test execution.
+ */
 public class JUnit5Adapter implements TestFrameworkAdapter {
     @Override
     public boolean isApplicable(Project project) {

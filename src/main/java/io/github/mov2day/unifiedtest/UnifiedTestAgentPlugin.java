@@ -1,23 +1,17 @@
 package io.github.mov2day.unifiedtest;
 
-import io.github.mov2day.unifiedtest.framework.FrameworkDetector;
 import io.github.mov2day.unifiedtest.reporting.ConsoleReporter;
 import io.github.mov2day.unifiedtest.collector.UnifiedTestResultCollector;
-import io.github.mov2day.unifiedtest.reporting.PrettyConsoleTestListener;
 import io.github.mov2day.unifiedtest.reporting.JsonReportGenerator;
 import io.github.mov2day.unifiedtest.reporting.HtmlReportGenerator;
 import io.github.mov2day.unifiedtest.reporting.OpenTelemetryExporter;
 import io.github.mov2day.unifiedtest.extension.ExtensionInvoker;
-import io.github.mov2day.unifiedtest.reporting.UnifiedJUnit4Listener;
-import io.github.mov2day.unifiedtest.reporting.UnifiedJUnit5Listener;
-import io.github.mov2day.unifiedtest.reporting.UnifiedTestNGListener;
 import org.gradle.api.Plugin;
 import org.gradle.api.Project;
 import org.gradle.api.tasks.testing.Test;
 import org.gradle.api.provider.Property;
 import org.gradle.api.model.ObjectFactory;
 import javax.inject.Inject;
-import java.util.Set;
 import io.github.mov2day.unifiedtest.framework.TestFrameworkAdapter;
 import io.github.mov2day.unifiedtest.framework.JUnit4Adapter;
 import io.github.mov2day.unifiedtest.framework.JUnit5Adapter;
@@ -26,11 +20,14 @@ import java.util.Arrays;
 import java.util.List;
 
 /**
- * Entry point for the UnifiedTest Gradle plugin.
- * Provides advanced test automation observability and reporting for JUnit4, JUnit5, and TestNG.
- * Excludes Spock and Cucumber.
+ * Main plugin class for UnifiedTest that provides test execution monitoring and reporting.
+ * Configures and manages test execution listeners for different test frameworks.
  */
 public class UnifiedTestAgentPlugin implements Plugin<Project> {
+    /**
+     * Configuration class for UnifiedTest plugin extension.
+     * Provides configuration options for test framework selection and report generation.
+     */
     public static class UnifiedTestExtensionConfig {
         private final Property<String> theme;
         private final Property<String> framework;
@@ -38,6 +35,11 @@ public class UnifiedTestAgentPlugin implements Plugin<Project> {
         private final Property<Boolean> htmlEnabled;
         private final Property<Boolean> telemetryEnabled;
         private final Property<String> telemetryEndpoint;
+
+        /**
+         * Creates a new configuration instance.
+         * @param objects the object factory for creating properties
+         */
         @Inject
         public UnifiedTestExtensionConfig(ObjectFactory objects) {
             this.theme = objects.property(String.class).convention("standard");
@@ -47,11 +49,41 @@ public class UnifiedTestAgentPlugin implements Plugin<Project> {
             this.telemetryEnabled = objects.property(Boolean.class).convention(false);
             this.telemetryEndpoint = objects.property(String.class).convention("");
         }
-        public Property<String> getTheme() { return theme; }
+
+        /**
+         * Gets the configured test framework.
+         * @return the test framework property
+         */
         public Property<String> getFramework() { return framework; }
+
+        /**
+         * Gets the configured theme for console output.
+         * @return the theme property
+         */
+        public Property<String> getTheme() { return theme; }
+
+        /**
+         * Gets whether JSON report generation is enabled.
+         * @return the JSON enabled property
+         */
         public Property<Boolean> getJsonEnabled() { return jsonEnabled; }
+
+        /**
+         * Gets whether HTML report generation is enabled.
+         * @return the HTML enabled property
+         */
         public Property<Boolean> getHtmlEnabled() { return htmlEnabled; }
+
+        /**
+         * Gets whether OpenTelemetry export is enabled.
+         * @return the telemetry enabled property
+         */
         public Property<Boolean> getTelemetryEnabled() { return telemetryEnabled; }
+
+        /**
+         * Gets the configured OpenTelemetry endpoint.
+         * @return the telemetry endpoint property
+         */
         public Property<String> getTelemetryEndpoint() { return telemetryEndpoint; }
     }
 
@@ -90,10 +122,18 @@ public class UnifiedTestAgentPlugin implements Plugin<Project> {
                 project.getLogger().warn("UnifiedTest: No supported test framework detected or configured.");
             }
             if (config.getJsonEnabled().get()) {
-                testTask.doLast(task -> JsonReportGenerator.generate(project, collector.getResults()));
+                testTask.doLast(t -> {
+                    if (t instanceof Test) {
+                        JsonReportGenerator.generate(project, (Test) t, collector);
+                    }
+                });
             }
             if (config.getHtmlEnabled().get()) {
-                testTask.doLast(task -> HtmlReportGenerator.generate(project, collector.getResults()));
+                testTask.doLast(t -> {
+                    if (t instanceof Test) {
+                        HtmlReportGenerator.generate(project, (Test) t, collector);
+                    }
+                });
             }
             if (config.getTelemetryEnabled().get()) {
                 testTask.doLast(task -> OpenTelemetryExporter.export(project, testTask, config.getTelemetryEndpoint().get()));

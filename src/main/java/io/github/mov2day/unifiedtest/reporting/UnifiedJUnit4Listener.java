@@ -9,8 +9,11 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import io.github.mov2day.unifiedtest.collector.UnifiedTestResultCollector;
 import io.github.mov2day.unifiedtest.collector.UnifiedTestResult;
-import io.github.mov2day.unifiedtest.reporting.ConsoleReporter;
 
+/**
+ * JUnit 4 test listener that integrates with UnifiedTest reporting.
+ * Captures JUnit4 test execution events and forwards them to the UnifiedTest collector and reporter.
+ */
 public class UnifiedJUnit4Listener extends RunListener {
     private final UnifiedTestResultCollector collector;
     private final AtomicInteger passed = new AtomicInteger();
@@ -19,6 +22,11 @@ public class UnifiedJUnit4Listener extends RunListener {
     private final AtomicInteger total = new AtomicInteger();
     private final ConsoleReporter reporter;
 
+    /**
+     * Creates a new listener with the specified collector and reporter.
+     * @param collector the test result collector
+     * @param reporter the console reporter
+     */
     public UnifiedJUnit4Listener(UnifiedTestResultCollector collector, ConsoleReporter reporter) {
         this.collector = collector;
         this.reporter = reporter;

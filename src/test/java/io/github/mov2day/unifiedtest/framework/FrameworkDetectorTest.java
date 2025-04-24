@@ -6,11 +6,15 @@ import org.gradle.api.artifacts.ConfigurationContainer;
 import org.gradle.api.artifacts.Dependency;
 import org.gradle.api.artifacts.DependencySet;
 import org.junit.jupiter.api.Test;
-import java.util.Set;
+import java.util.List;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
-class FrameworkDetectorTest {
+/**
+ * Unit tests for FrameworkDetector.
+ * Verifies correct detection of test frameworks from project dependencies.
+ */
+public class FrameworkDetectorTest {
     @Test
     void detectsJUnit4() {
         Project project = mock(Project.class);
@@ -24,7 +28,7 @@ class FrameworkDetectorTest {
         when(config.getAllDependencies()).thenReturn(depSet);
         when(configurations.findByName("testImplementation")).thenReturn(config);
         when(project.getConfigurations()).thenReturn(configurations);
-        Set<String> frameworks = FrameworkDetector.detect(project);
+        List<String> frameworks = FrameworkDetector.detect(project);
         assertTrue(frameworks.contains("JUnit4"));
     }
 }

@@ -6,8 +6,11 @@ import org.testng.ITestResult;
 import java.util.concurrent.atomic.AtomicInteger;
 import io.github.mov2day.unifiedtest.collector.UnifiedTestResultCollector;
 import io.github.mov2day.unifiedtest.collector.UnifiedTestResult;
-import io.github.mov2day.unifiedtest.reporting.ConsoleReporter;
 
+/**
+ * TestNG test listener that integrates with UnifiedTest reporting.
+ * Captures TestNG test execution events and forwards them to the UnifiedTest collector and reporter.
+ */
 public class UnifiedTestNGListener implements ITestListener {
     private final UnifiedTestResultCollector collector;
     private final AtomicInteger passed = new AtomicInteger();
@@ -16,6 +19,11 @@ public class UnifiedTestNGListener implements ITestListener {
     private final AtomicInteger total = new AtomicInteger();
     private final ConsoleReporter reporter;
 
+    /**
+     * Creates a new listener with the specified collector and reporter.
+     * @param collector the test result collector
+     * @param reporter the console reporter
+     */
     public UnifiedTestNGListener(UnifiedTestResultCollector collector, ConsoleReporter reporter) {
         this.collector = collector;
         this.reporter = reporter;

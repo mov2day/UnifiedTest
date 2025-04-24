@@ -8,6 +8,10 @@ import io.github.mov2day.unifiedtest.reporting.UnifiedTestNGListener;
 import io.github.mov2day.unifiedtest.reporting.PrettyConsoleTestListener;
 import io.github.mov2day.unifiedtest.UnifiedTestAgentPlugin;
 
+/**
+ * TestNG framework adapter for UnifiedTest.
+ * Handles registration of test listeners and configuration for TestNG test execution.
+ */
 public class TestNGAdapter implements TestFrameworkAdapter {
     @Override
     public boolean isApplicable(Project project) {
