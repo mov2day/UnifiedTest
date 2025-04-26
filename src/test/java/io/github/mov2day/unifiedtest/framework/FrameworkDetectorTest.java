@@ -4,35 +4,32 @@ import org.gradle.api.Project;
 import org.gradle.api.artifacts.Configuration;
 import org.gradle.api.artifacts.ConfigurationContainer;
 import org.gradle.api.artifacts.DependencySet;
-import org.gradle.api.artifacts.ProjectDependency;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import java.util.List;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
+import org.mockito.Mock;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.junit.jupiter.MockitoExtension;
 
 /**
  * Tests for the FrameworkDetector class.
  */
+@ExtendWith(MockitoExtension.class)
 public class FrameworkDetectorTest {
-    @BeforeAll
-    static void setup() {
-        System.setProperty("mockito.inline.extended.stacktrace", "false");
-    }
+    @Mock
+    private Project project;
+    @Mock
+    private ConfigurationContainer configurations;
 
     @Test
     void detectsJUnit4() {
-        // Setup mock with RETURNS_DEEP_STUBS to handle nested calls
-        Project project = mock(Project.class, withSettings()
-            .defaultAnswer(RETURNS_DEEP_STUBS)
-            .verboseLogging());
-        
-        // Mock testImplementation configuration
+        // Setup configuration chain
+        when(project.getConfigurations()).thenReturn(configurations);
         Configuration testConfig = mock(Configuration.class);
         DependencySet dependencies = mock(DependencySet.class);
+        when(configurations.findByName("testImplementation")).thenReturn(testConfig);
         when(testConfig.getAllDependencies()).thenReturn(dependencies);
-        when(dependencies.isEmpty()).thenReturn(true);
-        when(project.getConfigurations().findByName("testImplementation")).thenReturn(testConfig);
 
         // Test framework detection
         List<String> frameworks = FrameworkDetector.detect(project);
