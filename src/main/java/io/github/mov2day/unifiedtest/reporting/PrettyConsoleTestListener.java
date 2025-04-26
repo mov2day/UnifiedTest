@@ -7,6 +7,8 @@ import org.gradle.api.tasks.testing.TestResult;
 
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.Map;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 /**
  * Provides pretty-printed console output for test execution events.
@@ -14,7 +16,6 @@ import java.util.Map;
  */
 public class PrettyConsoleTestListener implements TestListener {
     private final Project project;
-    private final String theme;
     private final Map<String, String> testStatus = new ConcurrentHashMap<>();
     private int total = 0, passed = 0, failed = 0, skipped = 0;
 
@@ -33,7 +34,6 @@ public class PrettyConsoleTestListener implements TestListener {
      */
     public PrettyConsoleTestListener(Project project, String theme) {
         this.project = project;
-        this.theme = theme;
     }
 
     /**
@@ -100,19 +100,44 @@ public class PrettyConsoleTestListener implements TestListener {
 
     @Override public void beforeSuite(TestDescriptor suite) {}
 
-    @Override public void afterSuite(TestDescriptor suite, TestResult result) {
+    @Override 
+    public void afterSuite(TestDescriptor suite, TestResult result) {
         if (suite.getParent() == null) { // root suite
+            long totalTimeMillis = result.getEndTime() - result.getStartTime();
+            String formattedTime = formatDuration(totalTimeMillis);
+
             String summary = String.format("\n%s══════════════ UnifiedTest Summary ══════════════%s\n" +
                 "%s✅ Passed:%s %d    %s❌ Failed:%s %d    %s⏭ Skipped:%s %d\n" +
-                "%s📊 Total Tests: %d    🕒 Total Time: %.2fs%s\n" +
+                "%s📊 Total Tests: %d    🕒 Total Time: %s%s\n\n" +
+                "Status Distribution:\n" +
+                "%s✅ PASS: %.1f%%%s (%d tests)\n" +
+                "%s❌ FAIL: %.1f%%%s (%d tests)\n" +
+                "%s⏭ SKIP: %.1f%%%s (%d tests)\n" +
                 "═══════════════════════════════════════════════\n",
                 BOLD, RESET,
                 GREEN, RESET, passed,
                 RED, RESET, failed,
                 YELLOW, RESET, skipped,
-                CYAN, total, result.getEndTime() - result.getStartTime() / 1000.0, RESET);
+                CYAN, total, formattedTime, RESET,
+                GREEN, (passed * 100.0 / total), RESET, passed,
+                RED, (failed * 100.0 / total), RESET, failed,
+                YELLOW, (skipped * 100.0 / total), RESET, skipped);
             
             project.getLogger().lifecycle(summary);
         }
+    }
+
+    private String formatDuration(long millis) {
+        long hours = millis / (60 * 60 * 1000);
+        long minutes = (millis % (60 * 60 * 1000)) / (60 * 1000);
+        long seconds = (millis % (60 * 1000)) / 1000;
+        long ms = millis % 1000;
+        
+        StringBuilder timeStr = new StringBuilder();
+        if (hours > 0) timeStr.append(hours).append("h ");
+        if (minutes > 0) timeStr.append(minutes).append("m ");
+        if (seconds > 0 || ms > 0) timeStr.append(String.format("%d.%03ds", seconds, ms));
+        
+        return timeStr.length() > 0 ? timeStr.toString() : "0s";
     }
 }
