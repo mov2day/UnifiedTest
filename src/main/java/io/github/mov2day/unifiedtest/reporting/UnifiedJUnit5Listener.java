@@ -7,6 +7,8 @@ import org.junit.platform.engine.TestExecutionResult;
 import java.util.concurrent.atomic.AtomicInteger;
 import io.github.mov2day.unifiedtest.collector.UnifiedTestResultCollector;
 import io.github.mov2day.unifiedtest.collector.UnifiedTestResult;
+import java.io.PrintWriter;
+import java.io.StringWriter;
 
 /**
  * JUnit 5 test execution listener that integrates with UnifiedTest reporting.
@@ -80,7 +82,24 @@ public class UnifiedJUnit5Listener implements TestExecutionListener {
             }
             total.incrementAndGet();
             reporter.testResult(testIdentifier.getDisplayName(), status);
-            collector.addResult(new UnifiedTestResult(testIdentifier.getSource().isPresent() ? testIdentifier.getSource().get().toString() : "", testIdentifier.getDisplayName(), status));
+
+            String message = null;
+            String trace = null;
+            if (testExecutionResult.getThrowable().isPresent()) {
+                Throwable throwable = testExecutionResult.getThrowable().get();
+                message = throwable.getMessage();
+                StringWriter sw = new StringWriter();
+                throwable.printStackTrace(new PrintWriter(sw));
+                trace = sw.toString();
+            }
+
+            collector.addResult(new UnifiedTestResult(
+                testIdentifier.getSource().isPresent() ? testIdentifier.getSource().get().toString() : "",
+                testIdentifier.getDisplayName(),
+                status,
+                message,
+                trace
+            ));
         }
     }
 

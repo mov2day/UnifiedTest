@@ -5,6 +5,8 @@ import org.gradle.api.tasks.testing.TestDescriptor;
 import org.gradle.api.tasks.testing.TestListener;
 import org.gradle.api.tasks.testing.TestResult;
 
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.Map;
 import java.util.function.Function;
@@ -96,6 +98,20 @@ public class PrettyConsoleTestListener implements TestListener {
         
         project.getLogger().lifecycle(color + symbol + " " + display + " - " + BOLD + status + RESET + 
             color + " " + duration + RESET);
+
+        // Print failure details for failed tests
+        if (result.getResultType() == TestResult.ResultType.FAILURE && result.getException() != null) {
+            project.getLogger().error("\n" + RED + "Failure Details:" + RESET);
+            project.getLogger().error(RED + "Message: " + RESET + result.getException().getMessage());
+            project.getLogger().error(RED + "Stack Trace:" + RESET);
+            StringWriter sw = new StringWriter();
+            result.getException().printStackTrace(new PrintWriter(sw));
+            String[] stackTraceLines = sw.toString().split("\\n");
+            for (String line : stackTraceLines) {
+                project.getLogger().error("  " + line);
+            }
+            project.getLogger().lifecycle(""); // Empty line for better readability
+        }
     }
 
     @Override public void beforeSuite(TestDescriptor suite) {}

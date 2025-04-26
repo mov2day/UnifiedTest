@@ -28,8 +28,16 @@ public class JsonReportGenerator {
             List<UnifiedTestResult> results = collector.getResults();
             for (int i = 0; i < results.size(); i++) {
                 UnifiedTestResult r = results.get(i);
-                writer.write(String.format("  {\"class\":\"%s\", \"name\":\"%s\", \"status\":\"%s\"}%s\n",
-                    r.className, r.testName, r.status, (i < results.size() - 1 ? "," : "")));
+                writer.write(String.format("  {\"class\":\"%s\", \"name\":\"%s\", \"status\":\"%s\"%s%s}%s\n",
+                    r.className,
+                    r.testName,
+                    r.status,
+                    r.failureMessage != null ? String.format(", \"failureMessage\":\"%s\"", 
+                        r.failureMessage.replace("\"", "\\\"").replace("\n", "\\n")) : "",
+                    r.stackTrace != null ? String.format(", \"stackTrace\":\"%s\"", 
+                        r.stackTrace.replace("\"", "\\\"").replace("\n", "\\n")) : "",
+                    (i < results.size() - 1 ? "," : "")
+                ));
             }
             writer.write("]");
         } catch (IOException e) {

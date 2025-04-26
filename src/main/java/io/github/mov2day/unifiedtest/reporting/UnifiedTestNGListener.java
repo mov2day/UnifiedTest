@@ -6,6 +6,8 @@ import org.testng.ITestResult;
 import java.util.concurrent.atomic.AtomicInteger;
 import io.github.mov2day.unifiedtest.collector.UnifiedTestResultCollector;
 import io.github.mov2day.unifiedtest.collector.UnifiedTestResult;
+import java.io.PrintWriter;
+import java.io.StringWriter;
 
 /**
  * TestNG test listener that integrates with UnifiedTest reporting.
@@ -44,7 +46,23 @@ public class UnifiedTestNGListener implements ITestListener {
         reporter.testResult(result.getTestClass().getName() + "." + result.getName(), "FAIL");
         failed.incrementAndGet();
         total.incrementAndGet();
-        collector.addResult(new UnifiedTestResult(result.getTestClass().getName(), result.getName(), "FAIL"));
+
+        String message = null;
+        String trace = null;
+        if (result.getThrowable() != null) {
+            message = result.getThrowable().getMessage();
+            StringWriter sw = new StringWriter();
+            result.getThrowable().printStackTrace(new PrintWriter(sw));
+            trace = sw.toString();
+        }
+
+        collector.addResult(new UnifiedTestResult(
+            result.getTestClass().getName(),
+            result.getName(),
+            "FAIL",
+            message,
+            trace
+        ));
     }
     @Override
     public void onTestSkipped(ITestResult result) {

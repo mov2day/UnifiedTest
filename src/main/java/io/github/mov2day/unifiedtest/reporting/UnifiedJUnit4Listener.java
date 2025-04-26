@@ -5,6 +5,8 @@ import org.junit.runner.Result;
 import org.junit.runner.notification.Failure;
 import org.junit.runner.notification.RunListener;
 
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import io.github.mov2day.unifiedtest.collector.UnifiedTestResultCollector;
@@ -39,10 +41,21 @@ public class UnifiedJUnit4Listener extends RunListener {
 
     @Override
     public void testFailure(Failure failure) {
-        reporter.testResult(failure.getDescription().getClassName() + "." + failure.getDescription().getMethodName(), "FAIL");
+        String testClassName = failure.getDescription().getClassName();
+        String testMethodName = failure.getDescription().getMethodName();
+        reporter.testResult(testClassName + "." + testMethodName, "FAIL");
         failed.incrementAndGet();
         total.incrementAndGet();
-        collector.addResult(new UnifiedTestResult(failure.getDescription().getClassName(), failure.getDescription().getMethodName(), "FAIL"));
+
+        // Include failure message and stack trace
+        String message = failure.getMessage();
+        String trace = null;
+        if (failure.getException() != null) {
+            StringWriter sw = new StringWriter();
+            failure.getException().printStackTrace(new PrintWriter(sw));
+            trace = sw.toString();
+        }
+        collector.addResult(new UnifiedTestResult(testClassName, testMethodName, "FAIL", message, trace));
     }
 
     @Override
