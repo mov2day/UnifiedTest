@@ -14,15 +14,10 @@ import java.util.List;
  * Creates structured JSON output that can be consumed by other tools or systems.
  */
 public class JsonReportGenerator {
-    /**
-     * Generates a JSON report from the collected test results.
-     * @param project the Gradle project
-     * @param testTask the test task
-     * @param collector collector containing test results
-     */
     public static void generate(Project project, Test testTask, UnifiedTestResultCollector collector) {
-        File reportFile = new File(project.getLayout().getBuildDirectory().get().getAsFile(), "unifiedtest/report.json");
+        File reportFile = new File(project.getBuildDir(), "unifiedtest/reports/results.json");
         reportFile.getParentFile().mkdirs();
+        
         try (FileWriter writer = new FileWriter(reportFile)) {
             writer.write("[\n");
             List<UnifiedTestResult> results = collector.getResults();

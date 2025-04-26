@@ -18,6 +18,7 @@ import io.github.mov2day.unifiedtest.framework.JUnit5Adapter;
 import io.github.mov2day.unifiedtest.framework.TestNGAdapter;
 import java.util.Arrays;
 import java.util.List;
+import java.io.File;
 
 /**
  * Main plugin class for UnifiedTest that provides test execution monitoring and reporting.
@@ -95,12 +96,17 @@ public class UnifiedTestAgentPlugin implements Plugin<Project> {
             new JUnit5Adapter(),
             new TestNGAdapter()
         );
+
         project.getTasks().withType(Test.class).configureEach(testTask -> {
             final UnifiedTestResultCollector collector = new UnifiedTestResultCollector();
             final ConsoleReporter reporter = new ConsoleReporter(config.getTheme().get());
+            
+            // Configure framework adapter
             String frameworkConfig = config.getFramework().get();
             TestFrameworkAdapter selected = null;
+            
             if (!frameworkConfig.isEmpty()) {
+                // Use configured framework
                 for (TestFrameworkAdapter adapter : adapters) {
                     if (adapter.getName().equalsIgnoreCase(frameworkConfig)) {
                         selected = adapter;
@@ -108,6 +114,7 @@ public class UnifiedTestAgentPlugin implements Plugin<Project> {
                     }
                 }
             } else {
+                // Auto-detect framework
                 for (TestFrameworkAdapter adapter : adapters) {
                     if (adapter.isApplicable(project)) {
                         selected = adapter;
@@ -115,30 +122,31 @@ public class UnifiedTestAgentPlugin implements Plugin<Project> {
                     }
                 }
             }
+
             if (selected != null) {
                 selected.registerListeners(project, testTask, collector, reporter);
                 project.getLogger().lifecycle("UnifiedTest using framework: " + selected.getName());
             } else {
                 project.getLogger().warn("UnifiedTest: No supported test framework detected or configured.");
+                return;
             }
-            if (config.getJsonEnabled().get()) {
-                testTask.doLast(t -> {
-                    if (t instanceof Test) {
-                        JsonReportGenerator.generate(project, (Test) t, collector);
-                    }
-                });
-            }
-            if (config.getHtmlEnabled().get()) {
-                testTask.doLast(t -> {
-                    if (t instanceof Test) {
-                        HtmlReportGenerator.generate(project, (Test) t, collector);
-                    }
-                });
-            }
-            if (config.getTelemetryEnabled().get()) {
-                testTask.doLast(task -> OpenTelemetryExporter.export(project, testTask, config.getTelemetryEndpoint().get()));
-            }
-            testTask.doLast(task -> ExtensionInvoker.invoke(project, testTask));
+
+            // Register report generation
+            testTask.doLast(t -> {
+                if (!(t instanceof Test)) return;
+                
+                if (config.getJsonEnabled().get()) {
+                    File reportsDir = new File(project.getBuildDir(), "unifiedtest/reports");
+                    reportsDir.mkdirs();
+                    JsonReportGenerator.generate(project, (Test)t, collector);
+                }
+                
+                if (config.getHtmlEnabled().get()) {
+                    File reportsDir = new File(project.getBuildDir(), "unifiedtest/reports");
+                    reportsDir.mkdirs();
+                    HtmlReportGenerator.generate(project, (Test)t, collector);
+                }
+            });
         });
     }
 }
