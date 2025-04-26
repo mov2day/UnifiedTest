@@ -7,6 +7,8 @@ import org.junit.runner.notification.RunListener;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import io.github.mov2day.unifiedtest.collector.UnifiedTestResultCollector;
@@ -23,11 +25,10 @@ public class UnifiedJUnit4Listener extends RunListener {
     private final AtomicInteger skipped = new AtomicInteger();
     private final AtomicInteger total = new AtomicInteger();
     private final ConsoleReporter reporter;
+    private final Map<Description, Long> startTimes = new ConcurrentHashMap<>();
 
     /**
      * Creates a new listener with the specified collector and reporter.
-     * @param collector the test result collector
-     * @param reporter the console reporter
      */
     public UnifiedJUnit4Listener(UnifiedTestResultCollector collector, ConsoleReporter reporter) {
         this.collector = collector;
@@ -37,6 +38,7 @@ public class UnifiedJUnit4Listener extends RunListener {
     @Override
     public void testStarted(Description description) {
         reporter.testRunning(description.getClassName() + "." + description.getMethodName());
+        startTimes.put(description, System.currentTimeMillis());
     }
 
     @Override
@@ -47,7 +49,7 @@ public class UnifiedJUnit4Listener extends RunListener {
         failed.incrementAndGet();
         total.incrementAndGet();
 
-        // Include failure message and stack trace
+        long duration = getDurationAndRemove(failure.getDescription());
         String message = failure.getMessage();
         String trace = null;
         if (failure.getException() != null) {
@@ -55,7 +57,7 @@ public class UnifiedJUnit4Listener extends RunListener {
             failure.getException().printStackTrace(new PrintWriter(sw));
             trace = sw.toString();
         }
-        collector.addResult(new UnifiedTestResult(testClassName, testMethodName, "FAIL", message, trace));
+        collector.addResult(new UnifiedTestResult(testClassName, testMethodName, "FAIL", message, trace, duration));
     }
 
     @Override
@@ -63,7 +65,7 @@ public class UnifiedJUnit4Listener extends RunListener {
         reporter.testResult(description.getClassName() + "." + description.getMethodName(), "SKIP");
         skipped.incrementAndGet();
         total.incrementAndGet();
-        collector.addResult(new UnifiedTestResult(description.getClassName(), description.getMethodName(), "SKIP"));
+        collector.addResult(new UnifiedTestResult(description.getClassName(), description.getMethodName(), "SKIP", 0));
     }
 
     @Override
@@ -77,7 +79,8 @@ public class UnifiedJUnit4Listener extends RunListener {
         if (!collector.hasResult(description.getClassName(), description.getMethodName())) {
             passed.incrementAndGet();
             total.incrementAndGet();
-            collector.addResult(new UnifiedTestResult(description.getClassName(), description.getMethodName(), "PASS"));
+            long duration = getDurationAndRemove(description);
+            collector.addResult(new UnifiedTestResult(description.getClassName(), description.getMethodName(), "PASS", duration));
         }
     }
 
@@ -85,5 +88,10 @@ public class UnifiedJUnit4Listener extends RunListener {
     public void testRunFinished(Result result) {
         passed.set(result.getRunCount() - failed.get() - skipped.get());
         reporter.summary(result.getRunCount(), passed.get(), failed.get(), skipped.get());
+    }
+
+    private long getDurationAndRemove(Description description) {
+        Long startTime = startTimes.remove(description);
+        return startTime != null ? System.currentTimeMillis() - startTime : 0;
     }
 }

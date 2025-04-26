@@ -29,18 +29,19 @@ public class HtmlReportGenerator {
             writer.write("* { box-sizing: border-box; margin: 0; padding: 0; }\n");
             writer.write("body { font-family: system-ui, -apple-system, sans-serif; line-height: 1.5; color: #1f2937; background: #f9fafb; }\n");
             writer.write(".container { max-width: 1200px; margin: 0 auto; padding: 2rem; }\n");
-            writer.write("h1 { font-size: 2.25rem; font-weight: 700; color: var(--primary); margin-bottom: 2rem; }\n");
+            writer.write("h1 { font-size: 2.25rem; font-weight: 700; color: var(--primary); margin-bottom: 1rem; }\n");
             writer.write("h2 { font-size: 1.5rem; font-weight: 600; color: #374151; margin: 2rem 0 1rem; }\n");
-            writer.write(".card { background: white; border-radius: 0.5rem; box-shadow: 0 1px 3px rgba(0,0,0,0.1); margin-bottom: 1.5rem; }\n");
-            writer.write(".summary { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; padding: 1.5rem; }\n");
-            writer.write(".stat { padding: 1rem; border-radius: 0.375rem; }\n");
-            writer.write(".stat h3 { font-size: 0.875rem; font-weight: 500; text-transform: uppercase; letter-spacing: 0.05em; }\n");
-            writer.write(".stat p { font-size: 1.875rem; font-weight: 600; margin-top: 0.5rem; }\n");
+            writer.write(".card { background: white; border-radius: 0.5rem; box-shadow: 0 1px 3px rgba(0,0,0,0.1); margin-bottom: 1.5rem; padding: 1.5rem; }\n");
+            writer.write(".summary { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; }\n");
+            writer.write(".stat { padding: 1.5rem; border-radius: 0.375rem; text-align: center; }\n");
+            writer.write(".stat h3 { font-size: 0.875rem; font-weight: 500; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.5rem; }\n");
+            writer.write(".stat p { font-size: 2rem; font-weight: 600; margin: 0.5rem 0; }\n");
+            writer.write(".stat small { font-size: 0.875rem; opacity: 0.8; }\n");
             writer.write(".stat.total { background: #e0e7ff; color: var(--primary); }\n");
             writer.write(".stat.passed { background: #dcfce7; color: var(--success); }\n");
             writer.write(".stat.failed { background: #fee2e2; color: var(--error); }\n");
             writer.write(".stat.skipped { background: #fef3c7; color: var(--warning); }\n");
-            writer.write("table { width: 100%; border-collapse: collapse; margin: 1rem 0; }\n");
+            writer.write("table { width: 100%; border-collapse: collapse; margin: 1rem 0; background: white; }\n");
             writer.write("th { background: #f3f4f6; padding: 0.75rem; text-align: left; font-weight: 600; color: #4b5563; }\n");
             writer.write("td { padding: 0.75rem; border-bottom: 1px solid #e5e7eb; }\n");
             writer.write("tr:hover { background: #f9fafb; }\n");
@@ -50,7 +51,8 @@ public class HtmlReportGenerator {
             writer.write(".status.SKIP { background: #fef3c7; color: var(--warning); }\n");
             writer.write(".failure-details { margin: 1rem 0; padding: 1rem; border-radius: 0.375rem; background: #fff1f2; border: 1px solid #fecdd3; }\n");
             writer.write(".stack-trace { font-family: ui-monospace, monospace; font-size: 0.875rem; line-height: 1.5; padding: 1rem; background: #1f2937; color: #f9fafb; border-radius: 0.375rem; margin-top: 0.5rem; white-space: pre-wrap; overflow-x: auto; }\n");
-            writer.write(".timestamp { color: #6b7280; font-size: 0.875rem; margin-bottom: 1rem; }\n");
+            writer.write(".timestamp { color: #6b7280; font-size: 0.875rem; margin-bottom: 2rem; }\n");
+            writer.write(".duration { color: #6b7280; font-size: 0.875rem; margin-left: 1rem; }\n");
             writer.write("</style>\n</head>\n<body>\n");
             writer.write("<div class='container'>\n");
             
@@ -64,6 +66,7 @@ public class HtmlReportGenerator {
             long passed = results.stream().filter(r -> "PASS".equals(r.status)).count();
             long failed = results.stream().filter(r -> "FAIL".equals(r.status)).count();
             long skipped = results.stream().filter(r -> "SKIP".equals(r.status)).count();
+            long totalDuration = results.stream().mapToLong(r -> r.duration).sum();
 
             // Summary statistics
             writer.write("<div class='card'>\n");
@@ -71,21 +74,22 @@ public class HtmlReportGenerator {
             writer.write("<div class='stat total'>\n");
             writer.write("<h3>Total Tests</h3>\n");
             writer.write(String.format("<p>%d</p>\n", total));
+            writer.write(String.format("<small>Duration: %s</small>\n", formatDuration(totalDuration)));
             writer.write("</div>\n");
             writer.write("<div class='stat passed'>\n");
             writer.write("<h3>Passed</h3>\n");
             writer.write(String.format("<p>%d</p>\n", passed));
-            writer.write(String.format("<small>%.1f%%</small>\n", (passed * 100.0 / total)));
+            writer.write(String.format("<small>%.1f%%</small>\n", total > 0 ? (passed * 100.0 / total) : 0));
             writer.write("</div>\n");
             writer.write("<div class='stat failed'>\n");
             writer.write("<h3>Failed</h3>\n");
             writer.write(String.format("<p>%d</p>\n", failed));
-            writer.write(String.format("<small>%.1f%%</small>\n", (failed * 100.0 / total)));
+            writer.write(String.format("<small>%.1f%%</small>\n", total > 0 ? (failed * 100.0 / total) : 0));
             writer.write("</div>\n");
             writer.write("<div class='stat skipped'>\n");
             writer.write("<h3>Skipped</h3>\n");
             writer.write(String.format("<p>%d</p>\n", skipped));
-            writer.write(String.format("<small>%.1f%%</small>\n", (skipped * 100.0 / total)));
+            writer.write(String.format("<small>%.1f%%</small>\n", total > 0 ? (skipped * 100.0 / total) : 0));
             writer.write("</div>\n");
             writer.write("</div>\n");
             writer.write("</div>\n");
@@ -94,13 +98,14 @@ public class HtmlReportGenerator {
             writer.write("<div class='card'>\n");
             writer.write("<h2>Test Details</h2>\n");
             writer.write("<table>\n");
-            writer.write("<tr><th>Class</th><th>Test</th><th>Status</th><th>Details</th></tr>\n");
+            writer.write("<tr><th>Class</th><th>Test</th><th>Status</th><th>Duration</th><th>Details</th></tr>\n");
 
             for (UnifiedTestResult r : results) {
                 writer.write("<tr>\n");
                 writer.write(String.format("  <td>%s</td>\n", r.className));
                 writer.write(String.format("  <td>%s</td>\n", r.testName));
                 writer.write(String.format("  <td><span class='status %s'>%s</span></td>\n", r.status, r.status));
+                writer.write(String.format("  <td><span class='duration'>%s</span></td>\n", formatDuration(r.duration)));
                 writer.write("  <td>\n");
                 
                 if ("FAIL".equals(r.status) && (r.failureMessage != null || r.stackTrace != null)) {
@@ -127,5 +132,18 @@ public class HtmlReportGenerator {
         } catch (IOException e) {
             project.getLogger().error("Failed to write UnifiedTest HTML report", e);
         }
+    }
+
+    private static String formatDuration(long millis) {
+        if (millis < 1000) {
+            return millis + "ms";
+        }
+        double seconds = millis / 1000.0;
+        if (seconds < 60) {
+            return String.format("%.2fs", seconds);
+        }
+        long minutes = millis / (60 * 1000);
+        seconds = (millis % (60 * 1000)) / 1000.0;
+        return String.format("%dm %.2fs", minutes, seconds);
     }
 }

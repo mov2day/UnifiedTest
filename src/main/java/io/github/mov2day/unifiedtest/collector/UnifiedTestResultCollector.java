@@ -5,6 +5,8 @@ import org.gradle.api.tasks.testing.TestListener;
 import org.gradle.api.tasks.testing.TestResult;
 import java.util.List;
 import java.util.ArrayList;
+import java.io.PrintWriter;
+import java.io.StringWriter;
 
 /**
  * Collects and stores test results from various test frameworks.
@@ -12,15 +14,32 @@ import java.util.ArrayList;
  */
 public class UnifiedTestResultCollector implements TestListener {
     private final List<UnifiedTestResult> results = new ArrayList<>();
+
     @Override public void beforeSuite(TestDescriptor suite) {}
     @Override public void afterSuite(TestDescriptor suite, TestResult result) {}
     @Override public void beforeTest(TestDescriptor testDescriptor) {}
-    @Override public void afterTest(TestDescriptor testDescriptor, TestResult result) {
+    
+    @Override 
+    public void afterTest(TestDescriptor testDescriptor, TestResult result) {
         String status = result.getResultType().toString();
+        long duration = result.getEndTime() - result.getStartTime();
+        String message = null;
+        String trace = null;
+
+        if (result.getException() != null) {
+            message = result.getException().getMessage();
+            StringWriter sw = new StringWriter();
+            result.getException().printStackTrace(new PrintWriter(sw));
+            trace = sw.toString();
+        }
+
         results.add(new UnifiedTestResult(
             testDescriptor.getClassName(),
             testDescriptor.getName(),
-            status
+            status,
+            message,
+            trace,
+            duration
         ));
     }
 
@@ -46,5 +65,7 @@ public class UnifiedTestResultCollector implements TestListener {
      * Gets all collected test results.
      * @return list of all test results
      */
-    public List<UnifiedTestResult> getResults() { return results; }
+    public List<UnifiedTestResult> getResults() {
+        return results;
+    }
 }

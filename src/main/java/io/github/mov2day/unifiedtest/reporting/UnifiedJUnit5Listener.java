@@ -5,6 +5,8 @@ import org.junit.platform.launcher.TestIdentifier;
 import org.junit.platform.launcher.TestPlan;
 import org.junit.platform.engine.TestExecutionResult;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import io.github.mov2day.unifiedtest.collector.UnifiedTestResultCollector;
 import io.github.mov2day.unifiedtest.collector.UnifiedTestResult;
 import java.io.PrintWriter;
@@ -21,6 +23,7 @@ public class UnifiedJUnit5Listener implements TestExecutionListener {
     private final AtomicInteger failed = new AtomicInteger();
     private final AtomicInteger skipped = new AtomicInteger();
     private final AtomicInteger total = new AtomicInteger();
+    private final Map<TestIdentifier, Long> startTimes = new ConcurrentHashMap<>();
 
     private static UnifiedTestResultCollector staticCollector;
     private static ConsoleReporter staticReporter;
@@ -57,6 +60,7 @@ public class UnifiedJUnit5Listener implements TestExecutionListener {
     public void executionStarted(TestIdentifier testIdentifier) {
         if (testIdentifier.isTest()) {
             reporter.testRunning(testIdentifier.getDisplayName());
+            startTimes.put(testIdentifier, System.currentTimeMillis());
         }
     }
 
@@ -83,6 +87,7 @@ public class UnifiedJUnit5Listener implements TestExecutionListener {
             total.incrementAndGet();
             reporter.testResult(testIdentifier.getDisplayName(), status);
 
+            long duration = getDurationAndRemove(testIdentifier);
             String message = null;
             String trace = null;
             if (testExecutionResult.getThrowable().isPresent()) {
@@ -98,7 +103,8 @@ public class UnifiedJUnit5Listener implements TestExecutionListener {
                 testIdentifier.getDisplayName(),
                 status,
                 message,
-                trace
+                trace,
+                duration
             ));
         }
     }
@@ -106,5 +112,10 @@ public class UnifiedJUnit5Listener implements TestExecutionListener {
     @Override
     public void testPlanExecutionFinished(TestPlan testPlan) {
         reporter.summary(total.get(), passed.get(), failed.get(), skipped.get());
+    }
+
+    private long getDurationAndRemove(TestIdentifier testIdentifier) {
+        Long startTime = startTimes.remove(testIdentifier);
+        return startTime != null ? System.currentTimeMillis() - startTime : 0;
     }
 }

@@ -8,6 +8,8 @@ import io.github.mov2day.unifiedtest.collector.UnifiedTestResultCollector;
 import io.github.mov2day.unifiedtest.collector.UnifiedTestResult;
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * TestNG test listener that integrates with UnifiedTest reporting.
@@ -20,6 +22,7 @@ public class UnifiedTestNGListener implements ITestListener {
     private final AtomicInteger skipped = new AtomicInteger();
     private final AtomicInteger total = new AtomicInteger();
     private final ConsoleReporter reporter;
+    private final Map<ITestResult, Long> startTimes = new ConcurrentHashMap<>();
 
     /**
      * Creates a new listener with the specified collector and reporter.
@@ -30,23 +33,29 @@ public class UnifiedTestNGListener implements ITestListener {
         this.collector = collector;
         this.reporter = reporter;
     }
+
     @Override
     public void onTestStart(ITestResult result) {
         reporter.testRunning(result.getTestClass().getName() + "." + result.getName());
+        startTimes.put(result, System.currentTimeMillis());
     }
+
     @Override
     public void onTestSuccess(ITestResult result) {
         reporter.testResult(result.getTestClass().getName() + "." + result.getName(), "PASS");
         passed.incrementAndGet();
         total.incrementAndGet();
-        collector.addResult(new UnifiedTestResult(result.getTestClass().getName(), result.getName(), "PASS"));
+        long duration = getDurationAndRemove(result);
+        collector.addResult(new UnifiedTestResult(result.getTestClass().getName(), result.getName(), "PASS", duration));
     }
+
     @Override
     public void onTestFailure(ITestResult result) {
         reporter.testResult(result.getTestClass().getName() + "." + result.getName(), "FAIL");
         failed.incrementAndGet();
         total.incrementAndGet();
 
+        long duration = getDurationAndRemove(result);
         String message = null;
         String trace = null;
         if (result.getThrowable() != null) {
@@ -61,19 +70,30 @@ public class UnifiedTestNGListener implements ITestListener {
             result.getName(),
             "FAIL",
             message,
-            trace
+            trace,
+            duration
         ));
     }
+
     @Override
     public void onTestSkipped(ITestResult result) {
         reporter.testResult(result.getTestClass().getName() + "." + result.getName(), "SKIP");
         skipped.incrementAndGet();
         total.incrementAndGet();
-        collector.addResult(new UnifiedTestResult(result.getTestClass().getName(), result.getName(), "SKIP"));
+        long duration = getDurationAndRemove(result);
+        collector.addResult(new UnifiedTestResult(result.getTestClass().getName(), result.getName(), "SKIP", duration));
     }
-    @Override public void onTestFailedButWithinSuccessPercentage(ITestResult result) {}
+
+    @Override public void onTestFailedButWithinSuccessPercentage(ITestResult result) {
+        onTestFailure(result);
+    }
     @Override public void onStart(ITestContext context) {}
     @Override public void onFinish(ITestContext context) {
         reporter.summary(total.get(), passed.get(), failed.get(), skipped.get());
+    }
+
+    private long getDurationAndRemove(ITestResult result) {
+        Long startTime = startTimes.remove(result);
+        return startTime != null ? System.currentTimeMillis() - startTime : 0;
     }
 }
