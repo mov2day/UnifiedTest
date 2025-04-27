@@ -23,19 +23,18 @@ public class PrettyConsoleTestListener implements TestListener {
     private int total = 0, passed = 0, failed = 0, skipped = 0;
     private final UnifiedTestResultCollector collector;
 
-    // ANSI color codes - will only be used if supported
-    private static final String RESET = System.getProperty("os.name").toLowerCase().contains("win") ? "" : "\u001B[0m";
-    private static final String GREEN = System.getProperty("os.name").toLowerCase().contains("win") ? "" : "\u001B[32m";
-    private static final String RED = System.getProperty("os.name").toLowerCase().contains("win") ? "" : "\u001B[31m";
-    private static final String YELLOW = System.getProperty("os.name").toLowerCase().contains("win") ? "" : "\u001B[33m";
-    private static final String CYAN = System.getProperty("os.name").toLowerCase().contains("win") ? "" : "\u001B[36m";
-    private static final String BOLD = System.getProperty("os.name").toLowerCase().contains("win") ? "" : "\u001B[1m";
-
-    // Cross-platform symbols
-    private static final String PASS_SYMBOL = System.getProperty("os.name").toLowerCase().contains("win") ? "[PASS]" : "✅";
-    private static final String FAIL_SYMBOL = System.getProperty("os.name").toLowerCase().contains("win") ? "[FAIL]" : "❌";
-    private static final String SKIP_SYMBOL = System.getProperty("os.name").toLowerCase().contains("win") ? "[SKIP]" : "⏭";
-    private static final String RUNNING_SYMBOL = System.getProperty("os.name").toLowerCase().contains("win") ? "[RUN]" : "⏳";
+    private static final boolean FORCE_ANSI = Boolean.parseBoolean(System.getenv().getOrDefault("UNIFIEDTEST_FORCE_ANSI", "false"));
+    private static final boolean IS_WINDOWS = System.getProperty("os.name").toLowerCase().contains("win");
+    private static final String RESET = (IS_WINDOWS && !FORCE_ANSI) ? "" : "\u001B[0m";
+    private static final String GREEN = (IS_WINDOWS && !FORCE_ANSI) ? "" : "\u001B[32m";
+    private static final String RED = (IS_WINDOWS && !FORCE_ANSI) ? "" : "\u001B[31m";
+    private static final String YELLOW = (IS_WINDOWS && !FORCE_ANSI) ? "" : "\u001B[33m";
+    private static final String CYAN = (IS_WINDOWS && !FORCE_ANSI) ? "" : "\u001B[36m";
+    private static final String BOLD = (IS_WINDOWS && !FORCE_ANSI) ? "" : "\u001B[1m";
+    private static final String PASS_SYMBOL = (IS_WINDOWS && !FORCE_ANSI) ? "[PASS]" : "✅";
+    private static final String FAIL_SYMBOL = (IS_WINDOWS && !FORCE_ANSI) ? "[FAIL]" : "❌";
+    private static final String SKIP_SYMBOL = (IS_WINDOWS && !FORCE_ANSI) ? "[SKIP]" : "⏭";
+    private static final String RUNNING_SYMBOL = (IS_WINDOWS && !FORCE_ANSI) ? "[RUN]" : "⏳";
 
     /**
      * Creates a new PrettyConsoleTestListener with the specified theme.
@@ -148,24 +147,17 @@ public class PrettyConsoleTestListener implements TestListener {
         if (suite.getParent() == null) { // root suite
             long totalTimeMillis = result.getEndTime() - result.getStartTime();
             String formattedTime = formatDuration(totalTimeMillis);
-
-            String summary = String.format("\n%s%s UnifiedTest Summary %s\n" +
-                "%s%s Passed:%s %d    %s%s Failed:%s %d    %s%s Skipped:%s %d\n" +
-                "%sTotal Tests: %d    Time: %s%s\n\n" +
-                "Status Distribution:\n" +
-                "%sPASS: %.1f%%%s (%d tests)\n" +
-                "%sFAIL: %.1f%%%s (%d tests)\n" +
-                "%sSKIP: %.1f%%%s (%d tests)\n" +
-                "═════════════════════════════════════\n",
-                BOLD, System.getProperty("os.name").toLowerCase().contains("win") ? "====" : "════", RESET,
-                GREEN, PASS_SYMBOL, RESET, passed,
-                RED, FAIL_SYMBOL, RESET, failed,
-                YELLOW, SKIP_SYMBOL, RESET, skipped,
+            String summary = String.format("\n%sUnifiedTest Summary%s\n" +
+                "%s Passed: %-4d %s Failed: %-4d %s Skipped: %-4d\n" +
+                "Total Tests: %-4d Time: %s\n" +
+                "Status Distribution: PASS: %5.1f%% (%d)  FAIL: %5.1f%% (%d)  SKIP: %5.1f%% (%d)\n" +
+                "==============================================\n",
+                BOLD, RESET,
+                GREEN, passed, RED, failed, YELLOW, skipped,
                 CYAN, total, formattedTime, RESET,
-                GREEN, (passed * 100.0 / total), RESET, passed,
-                RED, (failed * 100.0 / total), RESET, failed,
-                YELLOW, (skipped * 100.0 / total), RESET, skipped);
-            
+                (passed * 100.0 / Math.max(1, total)), passed,
+                (failed * 100.0 / Math.max(1, total)), failed,
+                (skipped * 100.0 / Math.max(1, total)), skipped);
             project.getLogger().lifecycle(summary);
         }
     }

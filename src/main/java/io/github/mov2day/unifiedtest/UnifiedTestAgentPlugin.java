@@ -132,22 +132,24 @@ public class UnifiedTestAgentPlugin implements Plugin<Project> {
                 return;
             }
 
-            // Register report generation
-            testTask.doLast(t -> {
-                if (!(t instanceof Test)) return;
-                
-                if (config.getJsonEnabled().get()) {
-                    File reportsDir = new File(project.getBuildDir(), "unifiedtest/reports");
-                    reportsDir.mkdirs();
-                    JsonReportGenerator.generate(project, (Test)t, collector);
-                }
-                
-                if (config.getHtmlEnabled().get()) {
-                    File reportsDir = new File(project.getBuildDir(), "unifiedtest/reports");
-                    reportsDir.mkdirs();
-                    HtmlReportGenerator.generate(project, (Test)t, collector);
-                }
+            // Create a report generation task
+            String reportTaskName = testTask.getName() + "UnifiedTestReport";
+            project.getTasks().register(reportTaskName, t -> {
+                t.doLast(task -> {
+                    if (config.getJsonEnabled().get()) {
+                        File reportsDir = new File(project.getBuildDir(), "unifiedtest/reports");
+                        reportsDir.mkdirs();
+                        JsonReportGenerator.generate(project, testTask, collector);
+                    }
+                    if (config.getHtmlEnabled().get()) {
+                        File reportsDir = new File(project.getBuildDir(), "unifiedtest/reports");
+                        reportsDir.mkdirs();
+                        HtmlReportGenerator.generate(project, testTask, collector);
+                    }
+                });
             });
+            // Ensure report generation runs even if tests fail
+            testTask.finalizedBy(reportTaskName);
         });
     }
 }

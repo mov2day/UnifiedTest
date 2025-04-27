@@ -43,7 +43,7 @@ public class HtmlReportGenerator {
             writer.write(".stat.skipped { background: #fef3c7; color: var(--warning); }\n");
             writer.write("table { width: 100%; border-collapse: collapse; margin: 1rem 0; background: white; }\n");
             writer.write("th { background: #f3f4f6; padding: 0.75rem; text-align: left; font-weight: 600; color: #4b5563; }\n");
-            writer.write("td { padding: 0.75rem; border-bottom: 1px solid #e5e7eb; }\n");
+            writer.write("td { padding: 0.75rem; border-bottom: 1px solid #e5e7eb; max-width: 320px; word-break: break-all; white-space: pre-line; overflow-wrap: anywhere; text-overflow: ellipsis; overflow: hidden; }\n");
             writer.write("tr:hover { background: #f9fafb; }\n");
             writer.write(".status { font-weight: 500; padding: 0.25rem 0.75rem; border-radius: 9999px; display: inline-block; }\n");
             writer.write(".status.PASS { background: #dcfce7; color: var(--success); }\n");
