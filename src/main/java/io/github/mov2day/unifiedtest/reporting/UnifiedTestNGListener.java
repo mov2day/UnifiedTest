@@ -1,13 +1,12 @@
 package io.github.mov2day.unifiedtest.reporting;
 
-import org.testng.ITestContext;
 import org.testng.ITestListener;
 import org.testng.ITestResult;
-import java.util.concurrent.atomic.AtomicInteger;
 import io.github.mov2day.unifiedtest.collector.UnifiedTestResultCollector;
 import io.github.mov2day.unifiedtest.collector.UnifiedTestResult;
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -17,11 +16,11 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public class UnifiedTestNGListener implements ITestListener {
     private final UnifiedTestResultCollector collector;
+    private final ConsoleReporter reporter;
     private final AtomicInteger passed = new AtomicInteger();
     private final AtomicInteger failed = new AtomicInteger();
     private final AtomicInteger skipped = new AtomicInteger();
     private final AtomicInteger total = new AtomicInteger();
-    private final ConsoleReporter reporter;
     private final Map<ITestResult, Long> startTimes = new ConcurrentHashMap<>();
 
     /**
@@ -36,14 +35,14 @@ public class UnifiedTestNGListener implements ITestListener {
 
     @Override
     public void onTestStart(ITestResult result) {
-        String testName = result.getTestClass().getName() + "." + result.getMethod().getMethodName();
+        String testName = getTestName(result);
         reporter.testRunning(testName);
         startTimes.put(result, System.currentTimeMillis());
     }
 
     @Override
     public void onTestSuccess(ITestResult result) {
-        String testName = result.getTestClass().getName() + "." + result.getMethod().getMethodName();
+        String testName = getTestName(result);
         reporter.testResult(testName, "PASS");
         passed.incrementAndGet();
         total.incrementAndGet();
@@ -58,21 +57,18 @@ public class UnifiedTestNGListener implements ITestListener {
 
     @Override
     public void onTestFailure(ITestResult result) {
-        String testName = result.getTestClass().getName() + "." + result.getMethod().getMethodName();
+        String testName = getTestName(result);
         reporter.testResult(testName, "FAIL");
         failed.incrementAndGet();
         total.incrementAndGet();
-
         long duration = getDurationAndRemove(result);
-        String message = null;
+        String message = result.getThrowable().getMessage();
         String trace = null;
         if (result.getThrowable() != null) {
-            message = result.getThrowable().getMessage();
             StringWriter sw = new StringWriter();
             result.getThrowable().printStackTrace(new PrintWriter(sw));
             trace = sw.toString();
         }
-
         collector.addResult(new UnifiedTestResult(
             result.getTestClass().getName(),
             result.getMethod().getMethodName(),
@@ -85,25 +81,39 @@ public class UnifiedTestNGListener implements ITestListener {
 
     @Override
     public void onTestSkipped(ITestResult result) {
-        String testName = result.getTestClass().getName() + "." + result.getMethod().getMethodName();
+        String testName = getTestName(result);
         reporter.testResult(testName, "SKIP");
         skipped.incrementAndGet();
         total.incrementAndGet();
-        long duration = getDurationAndRemove(result);
         collector.addResult(new UnifiedTestResult(
             result.getTestClass().getName(),
             result.getMethod().getMethodName(),
             "SKIP",
-            duration
+            0
         ));
     }
 
-    @Override public void onTestFailedButWithinSuccessPercentage(ITestResult result) {
+    @Override
+    public void onTestFailedButWithinSuccessPercentage(ITestResult result) {
         onTestFailure(result);
     }
-    @Override public void onStart(ITestContext context) {}
-    @Override public void onFinish(ITestContext context) {
+
+    @Override
+    public void onStart(org.testng.ITestContext context) {
+        // Initialize counters
+        passed.set(0);
+        failed.set(0);
+        skipped.set(0);
+        total.set(0);
+    }
+
+    @Override
+    public void onFinish(org.testng.ITestContext context) {
         reporter.summary(total.get(), passed.get(), failed.get(), skipped.get());
+    }
+
+    private String getTestName(ITestResult result) {
+        return result.getTestClass().getName() + "." + result.getMethod().getMethodName();
     }
 
     private long getDurationAndRemove(ITestResult result) {

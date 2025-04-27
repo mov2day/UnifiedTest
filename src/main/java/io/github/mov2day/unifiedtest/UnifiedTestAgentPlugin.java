@@ -124,6 +124,7 @@ public class UnifiedTestAgentPlugin implements Plugin<Project> {
             }
 
             if (selected != null) {
+                // Register framework-specific listeners
                 selected.registerListeners(project, testTask, collector, reporter);
                 project.getLogger().lifecycle("UnifiedTest using framework: " + selected.getName());
             } else {

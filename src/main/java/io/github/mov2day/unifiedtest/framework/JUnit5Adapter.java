@@ -21,9 +21,9 @@ public class JUnit5Adapter implements TestFrameworkAdapter {
     @Override
     public void registerListeners(Project project, Test testTask, UnifiedTestResultCollector collector, ConsoleReporter reporter) {
         testTask.useJUnitPlatform();
-        // Initialize the static collector and reporter in UnifiedJUnit5Listener
-        UnifiedJUnit5Listener.setCollectorAndReporter(collector, reporter);
-        // Add the test listener using Gradle's test listener API
+        // Register the JUnit 5 listener with the collector and reporter
+        testTask.addTestListener(new UnifiedJUnit5Listener(collector, reporter));
+        // Add the pretty console listener
         testTask.addTestListener(new PrettyConsoleTestListener(project, getThemeFromConfig(project)));
     }
 

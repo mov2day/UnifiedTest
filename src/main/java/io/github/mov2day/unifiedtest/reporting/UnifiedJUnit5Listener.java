@@ -1,20 +1,20 @@
 package io.github.mov2day.unifiedtest.reporting;
 
+import org.junit.platform.engine.TestExecutionResult;
 import org.junit.platform.launcher.TestExecutionListener;
 import org.junit.platform.launcher.TestIdentifier;
 import org.junit.platform.launcher.TestPlan;
-import org.junit.platform.engine.TestExecutionResult;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 import io.github.mov2day.unifiedtest.collector.UnifiedTestResultCollector;
 import io.github.mov2day.unifiedtest.collector.UnifiedTestResult;
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * JUnit 5 test execution listener that integrates with UnifiedTest reporting.
- * Captures test execution events and forwards them to the UnifiedTest collector and reporter.
+ * JUnit 5 test listener that integrates with UnifiedTest reporting.
+ * Captures JUnit5 test execution events and forwards them to the UnifiedTest collector and reporter.
  */
 public class UnifiedJUnit5Listener implements TestExecutionListener {
     private final UnifiedTestResultCollector collector;
@@ -24,27 +24,6 @@ public class UnifiedJUnit5Listener implements TestExecutionListener {
     private final AtomicInteger skipped = new AtomicInteger();
     private final AtomicInteger total = new AtomicInteger();
     private final Map<TestIdentifier, Long> startTimes = new ConcurrentHashMap<>();
-
-    private static UnifiedTestResultCollector staticCollector;
-    private static ConsoleReporter staticReporter;
-
-    /**
-     * Sets the test result collector and console reporter for this listener.
-     * Must be called before test execution starts.
-     * @param collector the test result collector
-     * @param reporter the console reporter
-     */
-    public static void setCollectorAndReporter(UnifiedTestResultCollector collector, ConsoleReporter reporter) {
-        staticCollector = collector;
-        staticReporter = reporter;
-    }
-
-    /**
-     * Creates a new listener with default configuration.
-     */
-    public UnifiedJUnit5Listener() {
-        this(staticCollector, staticReporter);
-    }
 
     /**
      * Creates a new listener with the specified collector and reporter.
@@ -57,17 +36,48 @@ public class UnifiedJUnit5Listener implements TestExecutionListener {
     }
 
     @Override
+    public void testPlanExecutionStarted(TestPlan testPlan) {
+        // Initialize counters
+        passed.set(0);
+        failed.set(0);
+        skipped.set(0);
+        total.set(0);
+    }
+
+    @Override
     public void executionStarted(TestIdentifier testIdentifier) {
         if (testIdentifier.isTest()) {
-            reporter.testRunning(testIdentifier.getDisplayName());
+            String testName = getTestName(testIdentifier);
+            reporter.testRunning(testName);
             startTimes.put(testIdentifier, System.currentTimeMillis());
+        }
+    }
+
+    @Override
+    public void executionSkipped(TestIdentifier testIdentifier, String reason) {
+        if (testIdentifier.isTest()) {
+            String testName = getTestName(testIdentifier);
+            reporter.testResult(testName, "SKIP");
+            skipped.incrementAndGet();
+            total.incrementAndGet();
+            collector.addResult(new UnifiedTestResult(
+                getClassName(testIdentifier),
+                getMethodName(testIdentifier),
+                "SKIP",
+                0
+            ));
         }
     }
 
     @Override
     public void executionFinished(TestIdentifier testIdentifier, TestExecutionResult testExecutionResult) {
         if (testIdentifier.isTest()) {
+            String testName = getTestName(testIdentifier);
             String status;
+            String message = null;
+            String trace = null;
+            long duration = getDurationAndRemove(testIdentifier);
+
             switch (testExecutionResult.getStatus()) {
                 case SUCCESSFUL:
                     status = "PASS";
@@ -76,6 +86,13 @@ public class UnifiedJUnit5Listener implements TestExecutionListener {
                 case FAILED:
                     status = "FAIL";
                     failed.incrementAndGet();
+                    if (testExecutionResult.getThrowable().isPresent()) {
+                        Throwable throwable = testExecutionResult.getThrowable().get();
+                        message = throwable.getMessage();
+                        StringWriter sw = new StringWriter();
+                        throwable.printStackTrace(new PrintWriter(sw));
+                        trace = sw.toString();
+                    }
                     break;
                 case ABORTED:
                     status = "SKIP";
@@ -85,33 +102,11 @@ public class UnifiedJUnit5Listener implements TestExecutionListener {
                     status = testExecutionResult.getStatus().toString();
             }
             total.incrementAndGet();
-            reporter.testResult(testIdentifier.getDisplayName(), status);
-
-            long duration = getDurationAndRemove(testIdentifier);
-            String message = null;
-            String trace = null;
-            if (testExecutionResult.getThrowable().isPresent()) {
-                Throwable throwable = testExecutionResult.getThrowable().get();
-                message = throwable.getMessage();
-                StringWriter sw = new StringWriter();
-                throwable.printStackTrace(new PrintWriter(sw));
-                trace = sw.toString();
-            }
-
-            // Extract class name and test name from the test identifier
-            String className = testIdentifier.getSource().isPresent() ? 
-                testIdentifier.getSource().get().toString() : "";
-            String testName = testIdentifier.getDisplayName();
-            
-            // If className is empty, try to extract it from the test name
-            if (className.isEmpty() && testName.contains("(")) {
-                className = testName.substring(testName.indexOf("(") + 1, testName.indexOf(")"));
-                testName = testName.substring(0, testName.indexOf("("));
-            }
+            reporter.testResult(testName, status);
 
             collector.addResult(new UnifiedTestResult(
-                className,
-                testName,
+                getClassName(testIdentifier),
+                getMethodName(testIdentifier),
                 status,
                 message,
                 trace,
@@ -123,6 +118,26 @@ public class UnifiedJUnit5Listener implements TestExecutionListener {
     @Override
     public void testPlanExecutionFinished(TestPlan testPlan) {
         reporter.summary(total.get(), passed.get(), failed.get(), skipped.get());
+    }
+
+    private String getTestName(TestIdentifier testIdentifier) {
+        return getClassName(testIdentifier) + "." + getMethodName(testIdentifier);
+    }
+
+    private String getClassName(TestIdentifier testIdentifier) {
+        String uniqueId = testIdentifier.getUniqueId();
+        // Extract class name from uniqueId which is in format: [engine:junit-jupiter]/[class:ClassName]/[method:methodName]
+        int classStart = uniqueId.indexOf("[class:") + 7;
+        int classEnd = uniqueId.indexOf("]", classStart);
+        return uniqueId.substring(classStart, classEnd);
+    }
+
+    private String getMethodName(TestIdentifier testIdentifier) {
+        String uniqueId = testIdentifier.getUniqueId();
+        // Extract method name from uniqueId which is in format: [engine:junit-jupiter]/[class:ClassName]/[method:methodName]
+        int methodStart = uniqueId.indexOf("[method:") + 8;
+        int methodEnd = uniqueId.indexOf("]", methodStart);
+        return uniqueId.substring(methodStart, methodEnd);
     }
 
     private long getDurationAndRemove(TestIdentifier testIdentifier) {

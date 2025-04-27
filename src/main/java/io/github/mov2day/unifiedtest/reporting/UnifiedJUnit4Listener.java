@@ -4,15 +4,13 @@ import org.junit.runner.Description;
 import org.junit.runner.Result;
 import org.junit.runner.notification.Failure;
 import org.junit.runner.notification.RunListener;
-
-import java.io.PrintWriter;
-import java.io.StringWriter;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicInteger;
-
 import io.github.mov2day.unifiedtest.collector.UnifiedTestResultCollector;
 import io.github.mov2day.unifiedtest.collector.UnifiedTestResult;
+import java.io.PrintWriter;
+import java.io.StringWriter;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * JUnit 4 test listener that integrates with UnifiedTest reporting.
@@ -20,15 +18,17 @@ import io.github.mov2day.unifiedtest.collector.UnifiedTestResult;
  */
 public class UnifiedJUnit4Listener extends RunListener {
     private final UnifiedTestResultCollector collector;
+    private final ConsoleReporter reporter;
     private final AtomicInteger passed = new AtomicInteger();
     private final AtomicInteger failed = new AtomicInteger();
     private final AtomicInteger skipped = new AtomicInteger();
     private final AtomicInteger total = new AtomicInteger();
-    private final ConsoleReporter reporter;
     private final Map<Description, Long> startTimes = new ConcurrentHashMap<>();
 
     /**
      * Creates a new listener with the specified collector and reporter.
+     * @param collector the test result collector
+     * @param reporter the console reporter
      */
     public UnifiedJUnit4Listener(UnifiedTestResultCollector collector, ConsoleReporter reporter) {
         this.collector = collector;
@@ -59,6 +59,7 @@ public class UnifiedJUnit4Listener extends RunListener {
             failure.getException().printStackTrace(new PrintWriter(sw));
             trace = sw.toString();
         }
+
         collector.addResult(new UnifiedTestResult(
             testClassName,
             testMethodName,
