@@ -98,9 +98,20 @@ public class UnifiedJUnit5Listener implements TestExecutionListener {
                 trace = sw.toString();
             }
 
+            // Extract class name and test name from the test identifier
+            String className = testIdentifier.getSource().isPresent() ? 
+                testIdentifier.getSource().get().toString() : "";
+            String testName = testIdentifier.getDisplayName();
+            
+            // If className is empty, try to extract it from the test name
+            if (className.isEmpty() && testName.contains("(")) {
+                className = testName.substring(testName.indexOf("(") + 1, testName.indexOf(")"));
+                testName = testName.substring(0, testName.indexOf("("));
+            }
+
             collector.addResult(new UnifiedTestResult(
-                testIdentifier.getSource().isPresent() ? testIdentifier.getSource().get().toString() : "",
-                testIdentifier.getDisplayName(),
+                className,
+                testName,
                 status,
                 message,
                 trace,

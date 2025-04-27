@@ -36,22 +36,30 @@ public class UnifiedTestNGListener implements ITestListener {
 
     @Override
     public void onTestStart(ITestResult result) {
-        reporter.testRunning(result.getTestClass().getName() + "." + result.getName());
+        String testName = result.getTestClass().getName() + "." + result.getMethod().getMethodName();
+        reporter.testRunning(testName);
         startTimes.put(result, System.currentTimeMillis());
     }
 
     @Override
     public void onTestSuccess(ITestResult result) {
-        reporter.testResult(result.getTestClass().getName() + "." + result.getName(), "PASS");
+        String testName = result.getTestClass().getName() + "." + result.getMethod().getMethodName();
+        reporter.testResult(testName, "PASS");
         passed.incrementAndGet();
         total.incrementAndGet();
         long duration = getDurationAndRemove(result);
-        collector.addResult(new UnifiedTestResult(result.getTestClass().getName(), result.getName(), "PASS", duration));
+        collector.addResult(new UnifiedTestResult(
+            result.getTestClass().getName(),
+            result.getMethod().getMethodName(),
+            "PASS",
+            duration
+        ));
     }
 
     @Override
     public void onTestFailure(ITestResult result) {
-        reporter.testResult(result.getTestClass().getName() + "." + result.getName(), "FAIL");
+        String testName = result.getTestClass().getName() + "." + result.getMethod().getMethodName();
+        reporter.testResult(testName, "FAIL");
         failed.incrementAndGet();
         total.incrementAndGet();
 
@@ -67,7 +75,7 @@ public class UnifiedTestNGListener implements ITestListener {
 
         collector.addResult(new UnifiedTestResult(
             result.getTestClass().getName(),
-            result.getName(),
+            result.getMethod().getMethodName(),
             "FAIL",
             message,
             trace,
@@ -77,11 +85,17 @@ public class UnifiedTestNGListener implements ITestListener {
 
     @Override
     public void onTestSkipped(ITestResult result) {
-        reporter.testResult(result.getTestClass().getName() + "." + result.getName(), "SKIP");
+        String testName = result.getTestClass().getName() + "." + result.getMethod().getMethodName();
+        reporter.testResult(testName, "SKIP");
         skipped.incrementAndGet();
         total.incrementAndGet();
         long duration = getDurationAndRemove(result);
-        collector.addResult(new UnifiedTestResult(result.getTestClass().getName(), result.getName(), "SKIP", duration));
+        collector.addResult(new UnifiedTestResult(
+            result.getTestClass().getName(),
+            result.getMethod().getMethodName(),
+            "SKIP",
+            duration
+        ));
     }
 
     @Override public void onTestFailedButWithinSuccessPercentage(ITestResult result) {

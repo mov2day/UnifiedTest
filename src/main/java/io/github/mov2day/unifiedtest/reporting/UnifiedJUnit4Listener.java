@@ -37,7 +37,8 @@ public class UnifiedJUnit4Listener extends RunListener {
 
     @Override
     public void testStarted(Description description) {
-        reporter.testRunning(description.getClassName() + "." + description.getMethodName());
+        String testName = description.getClassName() + "." + description.getMethodName();
+        reporter.testRunning(testName);
         startTimes.put(description, System.currentTimeMillis());
     }
 
@@ -45,7 +46,8 @@ public class UnifiedJUnit4Listener extends RunListener {
     public void testFailure(Failure failure) {
         String testClassName = failure.getDescription().getClassName();
         String testMethodName = failure.getDescription().getMethodName();
-        reporter.testResult(testClassName + "." + testMethodName, "FAIL");
+        String testName = testClassName + "." + testMethodName;
+        reporter.testResult(testName, "FAIL");
         failed.incrementAndGet();
         total.incrementAndGet();
 
@@ -57,15 +59,28 @@ public class UnifiedJUnit4Listener extends RunListener {
             failure.getException().printStackTrace(new PrintWriter(sw));
             trace = sw.toString();
         }
-        collector.addResult(new UnifiedTestResult(testClassName, testMethodName, "FAIL", message, trace, duration));
+        collector.addResult(new UnifiedTestResult(
+            testClassName,
+            testMethodName,
+            "FAIL",
+            message,
+            trace,
+            duration
+        ));
     }
 
     @Override
     public void testIgnored(Description description) {
-        reporter.testResult(description.getClassName() + "." + description.getMethodName(), "SKIP");
+        String testName = description.getClassName() + "." + description.getMethodName();
+        reporter.testResult(testName, "SKIP");
         skipped.incrementAndGet();
         total.incrementAndGet();
-        collector.addResult(new UnifiedTestResult(description.getClassName(), description.getMethodName(), "SKIP", 0));
+        collector.addResult(new UnifiedTestResult(
+            description.getClassName(),
+            description.getMethodName(),
+            "SKIP",
+            0
+        ));
     }
 
     @Override
@@ -77,10 +92,17 @@ public class UnifiedJUnit4Listener extends RunListener {
     public void testFinished(Description description) {
         // If not already recorded as FAIL or SKIP, mark as PASS
         if (!collector.hasResult(description.getClassName(), description.getMethodName())) {
+            String testName = description.getClassName() + "." + description.getMethodName();
+            reporter.testResult(testName, "PASS");
             passed.incrementAndGet();
             total.incrementAndGet();
             long duration = getDurationAndRemove(description);
-            collector.addResult(new UnifiedTestResult(description.getClassName(), description.getMethodName(), "PASS", duration));
+            collector.addResult(new UnifiedTestResult(
+                description.getClassName(),
+                description.getMethodName(),
+                "PASS",
+                duration
+            ));
         }
     }
 
