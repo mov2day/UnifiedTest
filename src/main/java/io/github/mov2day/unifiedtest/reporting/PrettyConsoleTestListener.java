@@ -10,6 +10,9 @@ import java.io.StringWriter;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.Map;
 
+import io.github.mov2day.unifiedtest.collector.UnifiedTestResultCollector;
+import io.github.mov2day.unifiedtest.collector.UnifiedTestResult;
+
 /**
  * Provides pretty-printed console output for test execution events.
  * Supports different themes for console output formatting.
@@ -18,6 +21,7 @@ public class PrettyConsoleTestListener implements TestListener {
     private final Project project;
     private final Map<String, String> testStatus = new ConcurrentHashMap<>();
     private int total = 0, passed = 0, failed = 0, skipped = 0;
+    private final UnifiedTestResultCollector collector;
 
     // ANSI color codes - will only be used if supported
     private static final String RESET = System.getProperty("os.name").toLowerCase().contains("win") ? "" : "\u001B[0m";
@@ -37,9 +41,11 @@ public class PrettyConsoleTestListener implements TestListener {
      * Creates a new PrettyConsoleTestListener with the specified theme.
      * @param project the Gradle project
      * @param theme the console output theme to use
+     * @param collector the UnifiedTestResultCollector to add results to
      */
-    public PrettyConsoleTestListener(Project project, String theme) {
+    public PrettyConsoleTestListener(Project project, String theme, UnifiedTestResultCollector collector) {
         this.project = project;
+        this.collector = collector;
     }
 
     /**
@@ -69,6 +75,8 @@ public class PrettyConsoleTestListener implements TestListener {
         String status;
         String color;
         String symbol;
+        String message = null;
+        String trace = null;
         
         switch (result.getResultType()) {
             case SUCCESS:
@@ -82,6 +90,12 @@ public class PrettyConsoleTestListener implements TestListener {
                 color = RED;
                 symbol = FAIL_SYMBOL;
                 failed++;
+                if (result.getException() != null) {
+                    message = result.getException().getMessage();
+                    StringWriter sw = new StringWriter();
+                    result.getException().printStackTrace(new PrintWriter(sw));
+                    trace = sw.toString();
+                }
                 break;
             case SKIPPED:
                 status = "SKIP";
@@ -115,6 +129,16 @@ public class PrettyConsoleTestListener implements TestListener {
             }
             project.getLogger().lifecycle(""); // Empty line for better readability
         }
+
+        // Add result to collector
+        collector.addResult(new UnifiedTestResult(
+            testDescriptor.getClassName(),
+            testDescriptor.getName(),
+            status,
+            message,
+            trace,
+            durationMs
+        ));
     }
 
     @Override public void beforeSuite(TestDescriptor suite) {}

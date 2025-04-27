@@ -21,10 +21,12 @@ public class JUnit4Adapter implements TestFrameworkAdapter {
     @Override
     public void registerListeners(Project project, Test testTask, UnifiedTestResultCollector collector, ConsoleReporter reporter) {
         testTask.useJUnit();
-        // Register the JUnit 4 listener with the collector and reporter
-        testTask.addTestListener(new UnifiedJUnit4Listener(collector, reporter));
+        // Set the collector and reporter for the JUnit 4 listener
+        UnifiedJUnit4Listener.setCollectorAndReporter(collector, reporter);
+        // Register the JUnit 4 listener using system property
+        System.setProperty("junit.listeners", UnifiedJUnit4Listener.class.getName());
         // Add the pretty console listener
-        testTask.addTestListener(new PrettyConsoleTestListener(project, getThemeFromConfig(project)));
+        testTask.addTestListener(new PrettyConsoleTestListener(project, getThemeFromConfig(project), collector));
     }
     
     @Override

@@ -15,22 +15,23 @@ import java.util.concurrent.ConcurrentHashMap;
  * Captures TestNG test execution events and forwards them to the UnifiedTest collector and reporter.
  */
 public class UnifiedTestNGListener implements ITestListener {
-    private final UnifiedTestResultCollector collector;
-    private final ConsoleReporter reporter;
-    private final AtomicInteger passed = new AtomicInteger();
-    private final AtomicInteger failed = new AtomicInteger();
-    private final AtomicInteger skipped = new AtomicInteger();
-    private final AtomicInteger total = new AtomicInteger();
-    private final Map<ITestResult, Long> startTimes = new ConcurrentHashMap<>();
+    private static UnifiedTestResultCollector collector;
+    private static ConsoleReporter reporter;
+    private static final AtomicInteger passed = new AtomicInteger();
+    private static final AtomicInteger failed = new AtomicInteger();
+    private static final AtomicInteger skipped = new AtomicInteger();
+    private static final AtomicInteger total = new AtomicInteger();
+    private static final Map<ITestResult, Long> startTimes = new ConcurrentHashMap<>();
 
     /**
-     * Creates a new listener with the specified collector and reporter.
+     * Sets the collector and reporter for the listener.
+     * This method should be called before test execution starts.
      * @param collector the test result collector
      * @param reporter the console reporter
      */
-    public UnifiedTestNGListener(UnifiedTestResultCollector collector, ConsoleReporter reporter) {
-        this.collector = collector;
-        this.reporter = reporter;
+    public static void setCollectorAndReporter(UnifiedTestResultCollector collector, ConsoleReporter reporter) {
+        UnifiedTestNGListener.collector = collector;
+        UnifiedTestNGListener.reporter = reporter;
     }
 
     @Override

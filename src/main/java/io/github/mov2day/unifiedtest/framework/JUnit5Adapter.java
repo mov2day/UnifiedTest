@@ -9,7 +9,7 @@ import io.github.mov2day.unifiedtest.reporting.PrettyConsoleTestListener;
 import io.github.mov2day.unifiedtest.UnifiedTestAgentPlugin;
 
 /**
- * JUnit 5 (Jupiter) framework adapter for UnifiedTest.
+ * JUnit 5 framework adapter for UnifiedTest.
  * Handles registration of test listeners and configuration for JUnit 5 test execution.
  */
 public class JUnit5Adapter implements TestFrameworkAdapter {
@@ -21,10 +21,12 @@ public class JUnit5Adapter implements TestFrameworkAdapter {
     @Override
     public void registerListeners(Project project, Test testTask, UnifiedTestResultCollector collector, ConsoleReporter reporter) {
         testTask.useJUnitPlatform();
-        // Register the JUnit 5 listener with the collector and reporter
-        testTask.addTestListener(new UnifiedJUnit5Listener(collector, reporter));
+        // Set the collector and reporter for the JUnit 5 listener
+        UnifiedJUnit5Listener.setCollectorAndReporter(collector, reporter);
+        // Register the JUnit 5 listener using system property
+        System.setProperty("junit.jupiter.extensions.autodetection.enabled", "true");
         // Add the pretty console listener
-        testTask.addTestListener(new PrettyConsoleTestListener(project, getThemeFromConfig(project)));
+        testTask.addTestListener(new PrettyConsoleTestListener(project, getThemeFromConfig(project), collector));
     }
 
     @Override

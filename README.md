@@ -103,6 +103,60 @@ unifiedTest {
 
 ---
 
+## 📝 Framework-Specific Listener Setup
+
+To ensure UnifiedTest collects all test results and generates complete reports, register the listeners as follows for each framework:
+
+### JUnit 4
+- Gradle does **not** natively support adding a JUnit RunListener.
+- **Recommended:**
+  - Add a `@Rule` or `@ClassRule` in each test class to attach `UnifiedJUnit4Listener`.
+  - Or, use a custom runner that attaches the listener.
+  - Or, use a Gradle plugin or custom test runner to inject the listener at runtime.
+
+**Example using @ClassRule:**
+```java
+import org.junit.ClassRule;
+import io.github.mov2day.unifiedtest.reporting.UnifiedJUnit4Listener;
+
+public class MyTest {
+    @ClassRule
+    public static UnifiedJUnit4Listener listener = new UnifiedJUnit4Listener();
+    // ... your tests ...
+}
+```
+
+### JUnit 5
+- Register the listener via the JUnit Platform ServiceLoader:
+  1. Create the file:
+     `src/test/resources/META-INF/services/org.junit.platform.launcher.TestExecutionListener`
+  2. Add the line:
+     `io.github.mov2day.unifiedtest.reporting.UnifiedJUnit5Listener`
+  3. Ensure this file is included in your test classpath.
+
+### TestNG
+- Register the listener in one of the following ways:
+  - **Annotation:**
+    ```java
+    @Listeners(io.github.mov2day.unifiedtest.reporting.UnifiedTestNGListener.class)
+    public class MyTestNGTest { ... }
+    ```
+  - **testng.xml:**
+    ```xml
+    <listeners>
+      <listener class-name="io.github.mov2day.unifiedtest.reporting.UnifiedTestNGListener"/>
+    </listeners>
+    ```
+  - **Gradle build script:**
+    ```groovy
+    test {
+        useTestNG()
+        listeners << 'io.github.mov2day.unifiedtest.reporting.UnifiedTestNGListener'
+    }
+    ```
+
+---
+
 ## 🧠 How It Works
 
 ### 🔄 Dynamic Detection

@@ -21,10 +21,10 @@ public class TestNGAdapter implements TestFrameworkAdapter {
     @Override
     public void registerListeners(Project project, Test testTask, UnifiedTestResultCollector collector, ConsoleReporter reporter) {
         testTask.useTestNG();
-        // Register the TestNG listener with the collector and reporter
-        testTask.addTestListener(new UnifiedTestNGListener(collector, reporter));
+        // Set the collector and reporter for the TestNG listener
+        UnifiedTestNGListener.setCollectorAndReporter(collector, reporter);
         // Add the pretty console listener
-        testTask.addTestListener(new PrettyConsoleTestListener(project, getThemeFromConfig(project)));
+        testTask.addTestListener(new PrettyConsoleTestListener(project, getThemeFromConfig(project), collector));
     }
     
     @Override
