@@ -24,6 +24,6 @@ public class UnifiedTestResultCollectorTest {
         UnifiedTestResult r = collector.getResults().get(0);
         assertEquals("TestClass", r.className);
         assertEquals("testName", r.testName);
-        assertEquals("SUCCESS", r.status);
+        assertEquals("PASS", r.status);
     }
 }

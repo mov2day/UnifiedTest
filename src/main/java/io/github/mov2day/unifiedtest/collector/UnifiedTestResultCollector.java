@@ -5,6 +5,8 @@ import org.gradle.api.tasks.testing.TestListener;
 import org.gradle.api.tasks.testing.TestResult;
 import java.util.List;
 import java.util.ArrayList;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 
@@ -14,6 +16,7 @@ import java.io.StringWriter;
  */
 public class UnifiedTestResultCollector implements TestListener {
     private final List<UnifiedTestResult> results = new ArrayList<>();
+    private final Map<String, UnifiedTestResult> resultMap = new ConcurrentHashMap<>();
 
     @Override public void beforeSuite(TestDescriptor suite) {}
     @Override public void afterSuite(TestDescriptor suite, TestResult result) {}
@@ -21,7 +24,21 @@ public class UnifiedTestResultCollector implements TestListener {
     
     @Override 
     public void afterTest(TestDescriptor testDescriptor, TestResult result) {
-        String status = result.getResultType().toString();
+        String status;
+        switch (result.getResultType()) {
+            case SUCCESS:
+                status = "PASS";
+                break;
+            case FAILURE:
+                status = "FAIL";
+                break;
+            case SKIPPED:
+                status = "SKIP";
+                break;
+            default:
+                status = result.getResultType().toString();
+        }
+
         long duration = result.getEndTime() - result.getStartTime();
         String message = null;
         String trace = null;
@@ -33,14 +50,18 @@ public class UnifiedTestResultCollector implements TestListener {
             trace = sw.toString();
         }
 
-        results.add(new UnifiedTestResult(
+        UnifiedTestResult testResult = new UnifiedTestResult(
             testDescriptor.getClassName(),
             testDescriptor.getName(),
             status,
             message,
             trace,
             duration
-        ));
+        );
+
+        String key = testDescriptor.getClassName() + "." + testDescriptor.getName();
+        resultMap.put(key, testResult);
+        results.add(testResult);
     }
 
     /**
@@ -48,7 +69,11 @@ public class UnifiedTestResultCollector implements TestListener {
      * @param result the test result to add
      */
     public void addResult(UnifiedTestResult result) {
-        results.add(result);
+        String key = result.className + "." + result.testName;
+        if (!resultMap.containsKey(key)) {
+            resultMap.put(key, result);
+            results.add(result);
+        }
     }
 
     /**
@@ -58,7 +83,7 @@ public class UnifiedTestResultCollector implements TestListener {
      * @return true if a result exists for this test
      */
     public boolean hasResult(String className, String testName) {
-        return results.stream().anyMatch(r -> r.className.equals(className) && r.testName.equals(testName));
+        return resultMap.containsKey(className + "." + testName);
     }
 
     /**
@@ -66,6 +91,6 @@ public class UnifiedTestResultCollector implements TestListener {
      * @return list of all test results
      */
     public List<UnifiedTestResult> getResults() {
-        return results;
+        return new ArrayList<>(results);
     }
 }
