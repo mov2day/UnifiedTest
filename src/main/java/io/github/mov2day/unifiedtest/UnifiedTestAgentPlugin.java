@@ -132,9 +132,9 @@ public class UnifiedTestAgentPlugin implements Plugin<Project> {
                 return;
             }
 
-            // Create a report generation task
+            // Create a report generation task (use create instead of register)
             String reportTaskName = testTask.getName() + "UnifiedTestReport";
-            project.getTasks().register(reportTaskName, t -> {
+            project.getTasks().create(reportTaskName, t -> {
                 t.doLast(task -> {
                     if (config.getJsonEnabled().get()) {
                         File reportsDir = new File(project.getBuildDir(), "unifiedtest/reports");
