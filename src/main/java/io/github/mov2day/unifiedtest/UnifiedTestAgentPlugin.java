@@ -126,33 +126,35 @@ public class UnifiedTestAgentPlugin implements Plugin<Project> {
             // Attach the collector to the test task for later retrieval
             testTask.getExtensions().add("unifiedTestCollector", collector);
 
-            // Configure framework adapter
-            String frameworkConfig = config.getFramework().get();
-            TestFrameworkAdapter selected = null;
+            // Move framework detection and listener registration to doFirst
+            testTask.doFirst(task -> {
+                String frameworkConfig = config.getFramework().get();
+                TestFrameworkAdapter selected = null;
 
-            if (!frameworkConfig.isEmpty()) {
-                for (TestFrameworkAdapter adapter : adapters) {
-                    if (adapter.getName().equalsIgnoreCase(frameworkConfig)) {
-                        selected = adapter;
-                        break;
+                if (!frameworkConfig.isEmpty()) {
+                    for (TestFrameworkAdapter adapter : adapters) {
+                        if (adapter.getName().equalsIgnoreCase(frameworkConfig)) {
+                            selected = adapter;
+                            break;
+                        }
+                    }
+                } else {
+                    for (TestFrameworkAdapter adapter : adapters) {
+                        if (adapter.isApplicable(project)) {
+                            selected = adapter;
+                            break;
+                        }
                     }
                 }
-            } else {
-                for (TestFrameworkAdapter adapter : adapters) {
-                    if (adapter.isApplicable(project)) {
-                        selected = adapter;
-                        break;
-                    }
-                }
-            }
 
-            if (selected != null) {
-                selected.registerListeners(project, testTask, collector, reporter);
-                project.getLogger().lifecycle("UnifiedTest using framework: " + selected.getName());
-            } else {
-                project.getLogger().warn("UnifiedTest: No supported test framework detected or configured.");
-                return;
-            }
+                if (selected != null) {
+                    selected.registerListeners(project, testTask, collector, reporter);
+                    project.getLogger().lifecycle("UnifiedTest using framework: " + selected.getName());
+                } else {
+                    project.getLogger().warn("UnifiedTest: No supported test framework detected or configured. Falling back to default Gradle Test listeners.");
+                    testTask.addTestListener(new io.github.mov2day.unifiedtest.reporting.PrettyConsoleTestListener(project, config.getTheme().get(), collector));
+                }
+            });
 
             // Ensure report generation runs even if tests fail
             String reportTaskName = testTask.getName() + "UnifiedTestReport";
