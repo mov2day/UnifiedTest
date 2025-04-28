@@ -50,7 +50,8 @@ public class HtmlReportGenerator {
             writer.write(".status.FAIL { background: #fee2e2; color: var(--error); }\n");
             writer.write(".status.SKIP { background: #fef3c7; color: var(--warning); }\n");
             writer.write(".failure-details { margin: 1rem 0; padding: 1rem; border-radius: 0.375rem; background: #fff1f2; border: 1px solid #fecdd3; }\n");
-            writer.write(".stack-trace { font-family: ui-monospace, monospace; font-size: 0.875rem; line-height: 1.5; padding: 1rem; background: #1f2937; color: #f9fafb; border-radius: 0.375rem; margin-top: 0.5rem; white-space: pre-wrap; overflow-x: auto; }\n");
+            writer.write(".stacktrace { background: #f8f8f8; border: 1px solid #eee; padding: 0.5em; margin-top: 0.5em; max-height: 300px; overflow: auto; font-size: 0.95em; display: none; }");
+            writer.write(".toggle-stack { margin-left: 1em; font-size: 0.9em; cursor: pointer; background: none; border: none; color: #0074d9; text-decoration: underline; }");
             writer.write(".timestamp { color: #6b7280; font-size: 0.875rem; margin-bottom: 2rem; }\n");
             writer.write(".duration { color: #6b7280; font-size: 0.875rem; margin-left: 1rem; }\n");
             writer.write("</style>\n</head>\n<body>\n");
@@ -111,14 +112,11 @@ public class HtmlReportGenerator {
                 if ("FAIL".equals(r.status) && (r.failureMessage != null || r.stackTrace != null)) {
                     writer.write("    <div class='failure-details'>\n");
                     if (r.failureMessage != null) {
-                        writer.write(String.format("      <strong>Message:</strong> %s<br>\n", 
-                            r.failureMessage.replace("<", "&lt;").replace(">", "&gt;")));
+                        writer.write(String.format("      <strong>Message:</strong> %s\n", r.failureMessage.replace("<", "&lt;").replace(">", "&gt;")));
                     }
                     if (r.stackTrace != null) {
-                        writer.write("      <strong>Stack Trace:</strong>\n");
-                        writer.write("      <div class='stack-trace'>");
-                        writer.write(r.stackTrace.replace("<", "&lt;").replace(">", "&gt;"));
-                        writer.write("</div>\n");
+                        writer.write("      <button class='toggle-stack' onclick='toggleStack(this)'>Show Stack Trace</button>\n");
+                        writer.write(String.format("      <pre class='stacktrace'>%s</pre>\n", r.stackTrace.replace("<", "&lt;").replace(">", "&gt;")));
                     }
                     writer.write("    </div>\n");
                 }
@@ -128,7 +126,20 @@ public class HtmlReportGenerator {
             writer.write("</table>\n");
             writer.write("</div>\n"); // card end
             writer.write("</div>\n"); // container end
-            writer.write("</body>\n</html>");
+            writer.write("</body>\n");
+            writer.write("<script>\n" +
+                "function toggleStack(btn) {\n" +
+                "  var pre = btn.nextElementSibling;\n" +
+                "  if (pre.style.display === 'none' || pre.style.display === '') {\n" +
+                "    pre.style.display = 'block';\n" +
+                "    btn.textContent = 'Hide Stack Trace';\n" +
+                "  } else {\n" +
+                "    pre.style.display = 'none';\n" +
+                "    btn.textContent = 'Show Stack Trace';\n" +
+                "  }\n" +
+                "}\n" +
+                "</script>\n");
+            writer.write("</html>");
         } catch (IOException e) {
             project.getLogger().error("Failed to write UnifiedTest HTML report", e);
         }
