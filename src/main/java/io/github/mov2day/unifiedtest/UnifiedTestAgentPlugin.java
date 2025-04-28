@@ -123,8 +123,10 @@ public class UnifiedTestAgentPlugin implements Plugin<Project> {
             final UnifiedTestResultCollector collector = new UnifiedTestResultCollector();
             final ConsoleReporter reporter = new ConsoleReporter(config.getTheme().get());
 
-            // Attach the collector to the test task for later retrieval
-            testTask.getExtensions().add("unifiedTestCollector", collector);
+            // Attach the collector to the test task for later retrieval, only if not already present
+            if (testTask.getExtensions().findByName("unifiedTestCollector") == null) {
+                testTask.getExtensions().add("unifiedTestCollector", collector);
+            }
 
             // Move framework detection and listener registration to doFirst
             testTask.doFirst(task -> {
