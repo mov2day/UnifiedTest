@@ -97,45 +97,13 @@ public class UnifiedTestAgentPlugin implements Plugin<Project> {
             new TestNGAdapter()
         );
 
-        project.getTasks().withType(Test.class).configureEach(testTask -> {
-            final UnifiedTestResultCollector collector = new UnifiedTestResultCollector();
-            final ConsoleReporter reporter = new ConsoleReporter(config.getTheme().get());
-            
-            // Configure framework adapter
-            String frameworkConfig = config.getFramework().get();
-            TestFrameworkAdapter selected = null;
-            
-            if (!frameworkConfig.isEmpty()) {
-                // Use configured framework
-                for (TestFrameworkAdapter adapter : adapters) {
-                    if (adapter.getName().equalsIgnoreCase(frameworkConfig)) {
-                        selected = adapter;
-                        break;
-                    }
-                }
-            } else {
-                // Auto-detect framework
-                for (TestFrameworkAdapter adapter : adapters) {
-                    if (adapter.isApplicable(project)) {
-                        selected = adapter;
-                        break;
-                    }
-                }
-            }
-
-            if (selected != null) {
-                // Register framework-specific listeners
-                selected.registerListeners(project, testTask, collector, reporter);
-                project.getLogger().lifecycle("UnifiedTest using framework: " + selected.getName());
-            } else {
-                project.getLogger().warn("UnifiedTest: No supported test framework detected or configured.");
-                return;
-            }
-
-            // Create a report generation task (use create instead of register)
+        // 1. Register report tasks for all test tasks
+        project.getTasks().withType(Test.class).all(testTask -> {
             String reportTaskName = testTask.getName() + "UnifiedTestReport";
-            project.getTasks().create(reportTaskName, t -> {
+            project.getTasks().register(reportTaskName, t -> {
                 t.doLast(task -> {
+                    // Retrieve the collector from the test task's extensions
+                    UnifiedTestResultCollector collector = (UnifiedTestResultCollector) testTask.getExtensions().findByName("unifiedTestCollector");
                     if (config.getJsonEnabled().get()) {
                         File reportsDir = new File(project.getBuildDir(), "unifiedtest/reports");
                         reportsDir.mkdirs();
@@ -148,7 +116,46 @@ public class UnifiedTestAgentPlugin implements Plugin<Project> {
                     }
                 });
             });
+        });
+
+        // 2. Configure each test task
+        project.getTasks().withType(Test.class).configureEach(testTask -> {
+            final UnifiedTestResultCollector collector = new UnifiedTestResultCollector();
+            final ConsoleReporter reporter = new ConsoleReporter(config.getTheme().get());
+
+            // Attach the collector to the test task for later retrieval
+            testTask.getExtensions().add("unifiedTestCollector", collector);
+
+            // Configure framework adapter
+            String frameworkConfig = config.getFramework().get();
+            TestFrameworkAdapter selected = null;
+
+            if (!frameworkConfig.isEmpty()) {
+                for (TestFrameworkAdapter adapter : adapters) {
+                    if (adapter.getName().equalsIgnoreCase(frameworkConfig)) {
+                        selected = adapter;
+                        break;
+                    }
+                }
+            } else {
+                for (TestFrameworkAdapter adapter : adapters) {
+                    if (adapter.isApplicable(project)) {
+                        selected = adapter;
+                        break;
+                    }
+                }
+            }
+
+            if (selected != null) {
+                selected.registerListeners(project, testTask, collector, reporter);
+                project.getLogger().lifecycle("UnifiedTest using framework: " + selected.getName());
+            } else {
+                project.getLogger().warn("UnifiedTest: No supported test framework detected or configured.");
+                return;
+            }
+
             // Ensure report generation runs even if tests fail
+            String reportTaskName = testTask.getName() + "UnifiedTestReport";
             testTask.finalizedBy(reportTaskName);
         });
     }
