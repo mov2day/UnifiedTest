@@ -102,6 +102,9 @@ public class HtmlReportGenerator {
             writer.write(".allure-link { display: inline-flex; align-items: center; margin-top: 1rem; padding: 0.75rem 1.25rem; background: var(--primary); color: white; text-decoration: none; border-radius: 0.5rem; font-size: 0.875rem; font-weight: 500; gap: 0.5rem; transition: all 0.2s ease; }\n");
             writer.write(".allure-link::before { content: '📊'; }\n");
             writer.write(".allure-link:hover { background: #1565c0; transform: translateY(-1px); }\n");
+            writer.write(".status-summary { display: flex; gap: 1rem; color: #6b7280; font-size: 0.875rem; }\n");
+            writer.write(".status-summary .step-count::before { content: '📋'; margin-right: 0.25rem; }\n");
+            writer.write(".status-summary .attachment-count::before { content: '📎'; margin-right: 0.25rem; }\n");
             writer.write("</style>\n");
             writer.write("<link href='https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500&display=swap' rel='stylesheet'>\n");
             writer.write("</head>\n<body>\n");
@@ -177,7 +180,8 @@ public class HtmlReportGenerator {
                 writer.write(String.format("  <td><span class='duration'>%s</span></td>\n", formatDuration(r.duration)));
                 writer.write("  <td>\n");
                 
-                if ("FAIL".equals(r.status) && (r.failureMessage != null || r.stackTrace != null)) {
+                // For failed tests, show detailed information
+                if ("FAIL".equals(r.status)) {
                     writer.write("    <div class='failure-details'>\n");
                     if (r.failureMessage != null) {
                         writer.write(String.format("      <strong>Message:</strong> %s\n", r.failureMessage.replace("<", "&lt;").replace(">", "&gt;")));
@@ -187,67 +191,86 @@ public class HtmlReportGenerator {
                         writer.write(String.format("      <pre class='stacktrace'>%s</pre>\n", r.stackTrace.replace("<", "&lt;").replace(">", "&gt;")));
                     }
                     writer.write("    </div>\n");
-                }
 
-                // Add Allure details if available
-                String testKey = r.className + "." + r.testName;
-                String simpleTestKey = r.testName;
-                AllureReportReader.AllureTestResult allureResult = allureResults.get(testKey);
-                if (allureResult == null) {
-                    allureResult = allureResults.get(simpleTestKey);
-                }
-                
-                if (allureResult != null) {
-                    writer.write("    <div class='allure-details'>\n");
-                    writer.write("      <h4>Allure Test Details</h4>\n");
-                    
-                    // Add test status and duration
-                    writer.write(String.format("      <div class='allure-status %s'>Status: %s</div>\n",
-                        allureResult.getStatus().toLowerCase(), allureResult.getStatus()));
-                    writer.write(String.format("      <div class='allure-duration'>Duration: %s</div>\n",
-                        formatDuration(allureResult.getDuration())));
-                    
-                    // Add steps
-                    if (!allureResult.getSteps().isEmpty()) {
-                        writer.write("      <h4>Test Steps:</h4>\n");
-                        writer.write("      <div class='allure-steps'>\n");
-                        for (AllureReportReader.AllureTestResult.Step step : allureResult.getSteps()) {
-                            writer.write(String.format("        <div class='allure-step %s'>\n", 
-                                step.getStatus().toLowerCase()));
-                            writer.write(String.format("          <span class='step-status'>%s</span>\n",
-                                step.getStatus()));
-                            writer.write(String.format("          <span class='step-name'>%s</span>\n",
-                                step.getName()));
-                            writer.write("        </div>\n");
-                        }
-                        writer.write("      </div>\n");
+                    // Add Allure details if available
+                    String testKey = r.className + "." + r.testName;
+                    String simpleTestKey = r.testName;
+                    AllureReportReader.AllureTestResult allureResult = allureResults.get(testKey);
+                    if (allureResult == null) {
+                        allureResult = allureResults.get(simpleTestKey);
                     }
                     
-                    // Add attachments
-                    if (!allureResult.getAttachments().isEmpty()) {
-                        writer.write("      <h4>Attachments:</h4>\n");
-                        writer.write("      <div class='allure-attachments'>\n");
-                        for (AllureReportReader.AllureTestResult.Attachment attachment : allureResult.getAttachments()) {
-                            if (attachment.getType().startsWith("image/")) {
-                                writer.write(String.format("        <div class='allure-attachment'>\n"));
-                                writer.write(String.format("          <div class='attachment-name'>%s</div>\n",
-                                    attachment.getName()));
-                                writer.write(String.format("          <img src='file://%s' alt='%s'>\n", 
-                                    attachment.getSource(), attachment.getName()));
-                                writer.write("        </div>\n");
-                            } else {
-                                writer.write(String.format("        <div class='allure-attachment'>\n"));
-                                writer.write(String.format("          <div class='attachment-name'>%s</div>\n",
-                                    attachment.getName()));
-                                writer.write(String.format("          <a href='file://%s' target='_blank'>View Attachment</a>\n", 
-                                    attachment.getSource()));
+                    if (allureResult != null) {
+                        writer.write("    <div class='allure-details'>\n");
+                        writer.write("      <h4>Test Execution Details</h4>\n");
+                        
+                        // Add test status and duration
+                        writer.write(String.format("      <div class='allure-status %s'>Status: %s</div>\n",
+                            allureResult.getStatus().toLowerCase(), allureResult.getStatus()));
+                        writer.write(String.format("      <div class='allure-duration'>Duration: %s</div>\n",
+                            formatDuration(allureResult.getDuration())));
+                        
+                        // Add steps
+                        if (!allureResult.getSteps().isEmpty()) {
+                            writer.write("      <h4>Test Steps:</h4>\n");
+                            writer.write("      <div class='allure-steps'>\n");
+                            for (AllureReportReader.AllureTestResult.Step step : allureResult.getSteps()) {
+                                writer.write(String.format("        <div class='allure-step %s'>\n", 
+                                    step.getStatus().toLowerCase()));
+                                writer.write(String.format("          <span class='step-status'>%s</span>\n",
+                                    step.getStatus()));
+                                writer.write(String.format("          <span class='step-name'>%s</span>\n",
+                                    step.getName()));
                                 writer.write("        </div>\n");
                             }
+                            writer.write("      </div>\n");
                         }
-                        writer.write("      </div>\n");
+                        
+                        // Add attachments
+                        if (!allureResult.getAttachments().isEmpty()) {
+                            writer.write("      <h4>Evidence:</h4>\n");
+                            writer.write("      <div class='allure-attachments'>\n");
+                            for (AllureReportReader.AllureTestResult.Attachment attachment : allureResult.getAttachments()) {
+                                if (attachment.getType().startsWith("image/")) {
+                                    writer.write(String.format("        <div class='allure-attachment'>\n"));
+                                    writer.write(String.format("          <div class='attachment-name'>%s</div>\n",
+                                        attachment.getName()));
+                                    writer.write(String.format("          <img src='file://%s' alt='%s'>\n", 
+                                        attachment.getSource(), attachment.getName()));
+                                    writer.write("        </div>\n");
+                                } else {
+                                    writer.write(String.format("        <div class='allure-attachment'>\n"));
+                                    writer.write(String.format("          <div class='attachment-name'>%s</div>\n",
+                                        attachment.getName()));
+                                    writer.write(String.format("          <a href='file://%s' target='_blank'>View Attachment</a>\n", 
+                                        attachment.getSource()));
+                                    writer.write("        </div>\n");
+                                }
+                            }
+                            writer.write("      </div>\n");
+                        }
+                        
+                        writer.write("    </div>\n");
+                    }
+                } else {
+                    // For passed and skipped tests, show minimal information
+                    String testKey = r.className + "." + r.testName;
+                    String simpleTestKey = r.testName;
+                    AllureReportReader.AllureTestResult allureResult = allureResults.get(testKey);
+                    if (allureResult == null) {
+                        allureResult = allureResults.get(simpleTestKey);
                     }
                     
-                    writer.write("    </div>\n");
+                    if (allureResult != null) {
+                        writer.write(String.format("    <div class='status-summary %s'>\n", r.status.toLowerCase()));
+                        writer.write(String.format("      <span class='step-count'>%d steps</span>\n", 
+                            allureResult.getSteps().size()));
+                        if (!allureResult.getAttachments().isEmpty()) {
+                            writer.write(String.format("      <span class='attachment-count'>%d attachments</span>\n",
+                                allureResult.getAttachments().size()));
+                        }
+                        writer.write("    </div>\n");
+                    }
                 }
                 
                 writer.write("  </td>\n</tr>\n");
