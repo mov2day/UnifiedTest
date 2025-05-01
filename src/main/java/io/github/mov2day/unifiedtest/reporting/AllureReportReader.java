@@ -71,13 +71,22 @@ public class AllureReportReader {
             String content = Files.readString(resultFile);
             JsonObject result = gson.fromJson(content, JsonObject.class);
             
+            // Extract full name including class name if available
             String name = result.get("name").getAsString();
+            String fullName = name;
+            if (result.has("fullName")) {
+                fullName = result.get("fullName").getAsString();
+            } else if (result.has("testClass")) {
+                String testClass = result.get("testClass").getAsString();
+                fullName = testClass + "." + name;
+            }
+            
             String status = result.get("status").getAsString();
             String stage = result.get("stage").getAsString();
             long start = result.get("start").getAsLong();
             long stop = result.get("stop").getAsLong();
             
-            AllureTestResult testResult = new AllureTestResult(name, status, stage, start, stop);
+            AllureTestResult testResult = new AllureTestResult(fullName, status, stage, start, stop);
             
             // Parse steps if present
             if (result.has("steps")) {
@@ -101,9 +110,16 @@ public class AllureReportReader {
                     testResult.addAttachment(source, attachmentName, type);
                 });
             }
-            
+
+            // Add both by full name and simple name for better matching
+            allureResults.put(fullName, testResult);
             allureResults.put(name, testResult);
-        } catch (IOException e) {
+            
+            // Log for debugging
+            project.getLogger().info("Parsed Allure result: fullName={}, name={}, status={}, steps={}, attachments={}", 
+                fullName, name, status, testResult.getSteps().size(), testResult.getAttachments().size());
+            
+        } catch (IOException | RuntimeException e) {
             project.getLogger().error("Failed to parse Allure result file: " + resultFile, e);
         }
     }

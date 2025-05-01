@@ -58,14 +58,25 @@ public class HtmlReportGenerator {
             writer.write(".timestamp { color: #6b7280; font-size: 0.875rem; margin-bottom: 2rem; }\n");
             writer.write(".duration { color: #6b7280; font-size: 0.875rem; margin-left: 1rem; }\n");
             writer.write(".allure-details { margin-top: 1rem; padding: 1rem; border-radius: 0.375rem; background: #f8fafc; border: 1px solid #e2e8f0; }\n");
+            writer.write(".allure-details h4 { font-size: 1rem; font-weight: 600; margin: 1rem 0 0.5rem; color: #374151; }\n");
+            writer.write(".allure-status { display: inline-block; padding: 0.25rem 0.75rem; border-radius: 9999px; font-weight: 500; margin-right: 1rem; }\n");
+            writer.write(".allure-duration { display: inline-block; color: #6b7280; font-size: 0.875rem; }\n");
             writer.write(".allure-steps { margin-top: 0.5rem; }\n");
-            writer.write(".allure-step { padding: 0.5rem; margin: 0.25rem 0; border-radius: 0.25rem; background: white; border: 1px solid #e2e8f0; }\n");
+            writer.write(".allure-step { padding: 0.75rem; margin: 0.25rem 0; border-radius: 0.25rem; background: white; border: 1px solid #e2e8f0; display: flex; align-items: center; }\n");
+            writer.write(".allure-step .step-status { display: inline-block; padding: 0.125rem 0.5rem; border-radius: 9999px; font-size: 0.75rem; font-weight: 500; margin-right: 0.75rem; }\n");
+            writer.write(".allure-step .step-name { flex: 1; }\n");
             writer.write(".allure-step.passed { border-left: 4px solid var(--success); }\n");
+            writer.write(".allure-step.passed .step-status { background: #dcfce7; color: var(--success); }\n");
             writer.write(".allure-step.failed { border-left: 4px solid var(--error); }\n");
+            writer.write(".allure-step.failed .step-status { background: #fee2e2; color: var(--error); }\n");
             writer.write(".allure-step.skipped { border-left: 4px solid var(--warning); }\n");
-            writer.write(".allure-attachments { margin-top: 0.5rem; }\n");
-            writer.write(".allure-attachment { display: inline-block; margin: 0.25rem; padding: 0.5rem; border-radius: 0.25rem; background: white; border: 1px solid #e2e8f0; }\n");
-            writer.write(".allure-attachment img { max-width: 200px; max-height: 200px; border-radius: 0.25rem; }\n");
+            writer.write(".allure-step.skipped .step-status { background: #fef3c7; color: var(--warning); }\n");
+            writer.write(".allure-attachments { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 1rem; margin-top: 0.5rem; }\n");
+            writer.write(".allure-attachment { background: white; border: 1px solid #e2e8f0; border-radius: 0.25rem; overflow: hidden; }\n");
+            writer.write(".allure-attachment .attachment-name { padding: 0.5rem; font-size: 0.875rem; font-weight: 500; border-bottom: 1px solid #e2e8f0; background: #f8fafc; }\n");
+            writer.write(".allure-attachment img { width: 100%; height: auto; max-height: 200px; object-fit: contain; padding: 0.5rem; }\n");
+            writer.write(".allure-attachment a { display: block; padding: 1rem; text-align: center; color: var(--primary); text-decoration: none; }\n");
+            writer.write(".allure-attachment a:hover { background: #f8fafc; }\n");
             writer.write(".allure-link { display: inline-block; margin-top: 1rem; padding: 0.5rem 1rem; background: var(--primary); color: white; text-decoration: none; border-radius: 0.375rem; }\n");
             writer.write(".allure-link:hover { opacity: 0.9; }\n");
             writer.write("</style>\n</head>\n<body>\n");
@@ -155,17 +166,34 @@ public class HtmlReportGenerator {
 
                 // Add Allure details if available
                 String testKey = r.className + "." + r.testName;
+                String simpleTestKey = r.testName;
                 AllureReportReader.AllureTestResult allureResult = allureResults.get(testKey);
+                if (allureResult == null) {
+                    allureResult = allureResults.get(simpleTestKey);
+                }
+                
                 if (allureResult != null) {
                     writer.write("    <div class='allure-details'>\n");
+                    writer.write("      <h4>Allure Test Details</h4>\n");
+                    
+                    // Add test status and duration
+                    writer.write(String.format("      <div class='allure-status %s'>Status: %s</div>\n",
+                        allureResult.getStatus().toLowerCase(), allureResult.getStatus()));
+                    writer.write(String.format("      <div class='allure-duration'>Duration: %s</div>\n",
+                        formatDuration(allureResult.getDuration())));
                     
                     // Add steps
                     if (!allureResult.getSteps().isEmpty()) {
                         writer.write("      <h4>Test Steps:</h4>\n");
                         writer.write("      <div class='allure-steps'>\n");
                         for (AllureReportReader.AllureTestResult.Step step : allureResult.getSteps()) {
-                            writer.write(String.format("        <div class='allure-step %s'>%s</div>\n", 
-                                step.getStatus().toLowerCase(), step.getName()));
+                            writer.write(String.format("        <div class='allure-step %s'>\n", 
+                                step.getStatus().toLowerCase()));
+                            writer.write(String.format("          <span class='step-status'>%s</span>\n",
+                                step.getStatus()));
+                            writer.write(String.format("          <span class='step-name'>%s</span>\n",
+                                step.getName()));
+                            writer.write("        </div>\n");
                         }
                         writer.write("      </div>\n");
                     }
@@ -177,13 +205,17 @@ public class HtmlReportGenerator {
                         for (AllureReportReader.AllureTestResult.Attachment attachment : allureResult.getAttachments()) {
                             if (attachment.getType().startsWith("image/")) {
                                 writer.write(String.format("        <div class='allure-attachment'>\n"));
+                                writer.write(String.format("          <div class='attachment-name'>%s</div>\n",
+                                    attachment.getName()));
                                 writer.write(String.format("          <img src='file://%s' alt='%s'>\n", 
                                     attachment.getSource(), attachment.getName()));
                                 writer.write("        </div>\n");
                             } else {
                                 writer.write(String.format("        <div class='allure-attachment'>\n"));
-                                writer.write(String.format("          <a href='file://%s' target='_blank'>%s</a>\n", 
-                                    attachment.getSource(), attachment.getName()));
+                                writer.write(String.format("          <div class='attachment-name'>%s</div>\n",
+                                    attachment.getName()));
+                                writer.write(String.format("          <a href='file://%s' target='_blank'>View Attachment</a>\n", 
+                                    attachment.getSource()));
                                 writer.write("        </div>\n");
                             }
                         }
