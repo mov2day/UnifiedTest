@@ -33,7 +33,8 @@ public class HtmlReportGenerator {
             writer.write("h2 { font-size: 1.5rem; font-weight: 600; color: #374151; margin: 2rem 0 1rem; }\n");
             writer.write(".card { background: white; border-radius: 0.5rem; box-shadow: 0 1px 3px rgba(0,0,0,0.1); margin-bottom: 1.5rem; padding: 1.5rem; }\n");
             writer.write(".summary { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; }\n");
-            writer.write(".stat { padding: 1.5rem; border-radius: 0.375rem; text-align: center; }\n");
+            writer.write(".stat { padding: 1.5rem; border-radius: 0.375rem; text-align: center; cursor: pointer; transition: opacity 0.2s; }\n");
+            writer.write(".stat:hover { opacity: 0.9; }\n");
             writer.write(".stat h3 { font-size: 0.875rem; font-weight: 500; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.5rem; }\n");
             writer.write(".stat p { font-size: 2rem; font-weight: 600; margin: 0.5rem 0; }\n");
             writer.write(".stat small { font-size: 0.875rem; opacity: 0.8; }\n");
@@ -72,22 +73,22 @@ public class HtmlReportGenerator {
             // Summary statistics
             writer.write("<div class='card'>\n");
             writer.write("<div class='summary'>\n");
-            writer.write("<div class='stat total'>\n");
+            writer.write("<div class='stat total' onclick='filterTests(\"all\")'>\n");
             writer.write("<h3>Total Tests</h3>\n");
             writer.write(String.format("<p>%d</p>\n", total));
             writer.write(String.format("<small>Duration: %s</small>\n", formatDuration(totalDuration)));
             writer.write("</div>\n");
-            writer.write("<div class='stat passed'>\n");
+            writer.write("<div class='stat passed' onclick='filterTests(\"PASS\")'>\n");
             writer.write("<h3>Passed</h3>\n");
             writer.write(String.format("<p>%d</p>\n", passed));
             writer.write(String.format("<small>%.1f%%</small>\n", total > 0 ? (passed * 100.0 / total) : 0));
             writer.write("</div>\n");
-            writer.write("<div class='stat failed'>\n");
+            writer.write("<div class='stat failed' onclick='filterTests(\"FAIL\")'>\n");
             writer.write("<h3>Failed</h3>\n");
             writer.write(String.format("<p>%d</p>\n", failed));
             writer.write(String.format("<small>%.1f%%</small>\n", total > 0 ? (failed * 100.0 / total) : 0));
             writer.write("</div>\n");
-            writer.write("<div class='stat skipped'>\n");
+            writer.write("<div class='stat skipped' onclick='filterTests(\"SKIP\")'>\n");
             writer.write("<h3>Skipped</h3>\n");
             writer.write(String.format("<p>%d</p>\n", skipped));
             writer.write(String.format("<small>%.1f%%</small>\n", total > 0 ? (skipped * 100.0 / total) : 0));
@@ -137,6 +138,26 @@ public class HtmlReportGenerator {
                 "    pre.style.display = 'none';\n" +
                 "    btn.textContent = 'Show Stack Trace';\n" +
                 "  }\n" +
+                "}\n\n" +
+                "function filterTests(status) {\n" +
+                "  const rows = document.querySelectorAll('table tr:not(:first-child)');\n" +
+                "  rows.forEach(row => {\n" +
+                "    const statusCell = row.querySelector('.status');\n" +
+                "    if (status === 'all' || (statusCell && statusCell.textContent === status)) {\n" +
+                "      row.style.display = '';\n" +
+                "    } else {\n" +
+                "      row.style.display = 'none';\n" +
+                "    }\n" +
+                "  });\n" +
+                "  // Update active state on summary stats\n" +
+                "  document.querySelectorAll('.stat').forEach(stat => {\n" +
+                "    if ((status === 'all' && stat.classList.contains('total')) ||\n" +
+                "        (stat.classList.contains(status.toLowerCase()))) {\n" +
+                "      stat.style.opacity = '1';\n" +
+                "    } else {\n" +
+                "      stat.style.opacity = '0.7';\n" +
+                "    }\n" +
+                "  });\n" +
                 "}\n" +
                 "</script>\n");
             writer.write("</html>");
