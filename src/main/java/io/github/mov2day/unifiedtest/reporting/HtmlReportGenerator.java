@@ -8,7 +8,9 @@ import org.gradle.api.tasks.testing.Test;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Generates HTML test reports from UnifiedTest results.
@@ -55,6 +57,17 @@ public class HtmlReportGenerator {
             writer.write(".toggle-stack { margin-left: 1em; font-size: 0.9em; cursor: pointer; background: none; border: none; color: #0074d9; text-decoration: underline; }");
             writer.write(".timestamp { color: #6b7280; font-size: 0.875rem; margin-bottom: 2rem; }\n");
             writer.write(".duration { color: #6b7280; font-size: 0.875rem; margin-left: 1rem; }\n");
+            writer.write(".allure-details { margin-top: 1rem; padding: 1rem; border-radius: 0.375rem; background: #f8fafc; border: 1px solid #e2e8f0; }\n");
+            writer.write(".allure-steps { margin-top: 0.5rem; }\n");
+            writer.write(".allure-step { padding: 0.5rem; margin: 0.25rem 0; border-radius: 0.25rem; background: white; border: 1px solid #e2e8f0; }\n");
+            writer.write(".allure-step.passed { border-left: 4px solid var(--success); }\n");
+            writer.write(".allure-step.failed { border-left: 4px solid var(--error); }\n");
+            writer.write(".allure-step.skipped { border-left: 4px solid var(--warning); }\n");
+            writer.write(".allure-attachments { margin-top: 0.5rem; }\n");
+            writer.write(".allure-attachment { display: inline-block; margin: 0.25rem; padding: 0.5rem; border-radius: 0.25rem; background: white; border: 1px solid #e2e8f0; }\n");
+            writer.write(".allure-attachment img { max-width: 200px; max-height: 200px; border-radius: 0.25rem; }\n");
+            writer.write(".allure-link { display: inline-block; margin-top: 1rem; padding: 0.5rem 1rem; background: var(--primary); color: white; text-decoration: none; border-radius: 0.375rem; }\n");
+            writer.write(".allure-link:hover { opacity: 0.9; }\n");
             writer.write("</style>\n</head>\n<body>\n");
             writer.write("<div class='container'>\n");
             
@@ -96,6 +109,24 @@ public class HtmlReportGenerator {
             writer.write("</div>\n");
             writer.write("</div>\n");
 
+            // Check for Allure reports
+            AllureReportReader allureReader = new AllureReportReader(project);
+            boolean hasAllureReports = allureReader.hasAllureReports();
+            Map<String, AllureReportReader.AllureTestResult> allureResults = hasAllureReports ? 
+                allureReader.readAllureResults() : Collections.emptyMap();
+
+            // Add Allure report link if available
+            if (hasAllureReports) {
+                String allureReportPath = allureReader.getAllureReportPath();
+                if (allureReportPath != null) {
+                    writer.write("<div class='card'>\n");
+                    writer.write("<h2>Allure Report</h2>\n");
+                    writer.write("<p>Detailed test reports with screenshots, steps, and environment information are available in the Allure report.</p>\n");
+                    writer.write(String.format("<a href='file://%s/index.html' class='allure-link' target='_blank'>View Full Allure Report</a>\n", allureReportPath));
+                    writer.write("</div>\n");
+                }
+            }
+
             // Test details table
             writer.write("<div class='card'>\n");
             writer.write("<h2>Test Details</h2>\n");
@@ -121,6 +152,47 @@ public class HtmlReportGenerator {
                     }
                     writer.write("    </div>\n");
                 }
+
+                // Add Allure details if available
+                String testKey = r.className + "." + r.testName;
+                AllureReportReader.AllureTestResult allureResult = allureResults.get(testKey);
+                if (allureResult != null) {
+                    writer.write("    <div class='allure-details'>\n");
+                    
+                    // Add steps
+                    if (!allureResult.getSteps().isEmpty()) {
+                        writer.write("      <h4>Test Steps:</h4>\n");
+                        writer.write("      <div class='allure-steps'>\n");
+                        for (AllureReportReader.AllureTestResult.Step step : allureResult.getSteps()) {
+                            writer.write(String.format("        <div class='allure-step %s'>%s</div>\n", 
+                                step.getStatus().toLowerCase(), step.getName()));
+                        }
+                        writer.write("      </div>\n");
+                    }
+                    
+                    // Add attachments
+                    if (!allureResult.getAttachments().isEmpty()) {
+                        writer.write("      <h4>Attachments:</h4>\n");
+                        writer.write("      <div class='allure-attachments'>\n");
+                        for (AllureReportReader.AllureTestResult.Attachment attachment : allureResult.getAttachments()) {
+                            if (attachment.getType().startsWith("image/")) {
+                                writer.write(String.format("        <div class='allure-attachment'>\n"));
+                                writer.write(String.format("          <img src='file://%s' alt='%s'>\n", 
+                                    attachment.getSource(), attachment.getName()));
+                                writer.write("        </div>\n");
+                            } else {
+                                writer.write(String.format("        <div class='allure-attachment'>\n"));
+                                writer.write(String.format("          <a href='file://%s' target='_blank'>%s</a>\n", 
+                                    attachment.getSource(), attachment.getName()));
+                                writer.write("        </div>\n");
+                            }
+                        }
+                        writer.write("      </div>\n");
+                    }
+                    
+                    writer.write("    </div>\n");
+                }
+                
                 writer.write("  </td>\n</tr>\n");
             }
             

@@ -308,3 +308,33 @@ Maintained by [**Muthu**](https://github.com/mov2day)
 ## 📜 License
 
 [MIT](LICENSE)
+
+## Allure Integration
+
+UnifiedTest now supports integration with Allure reports. If Allure reports are present in your project, UnifiedTest will automatically:
+
+1. Detect Allure reports in the `build/allure-results` or `build/allure-report` directories
+2. Include Allure test steps and attachments in the HTML report
+3. Provide links to the full Allure report
+4. Display test steps with their status (passed/failed/skipped)
+5. Show attachments (including images) directly in the report
+
+### Using Allure with UnifiedTest
+
+1. Make sure you have Allure configured in your project
+2. Run your tests with Allure enabled
+3. The UnifiedTest HTML report will automatically include Allure data if available
+
+Example of Allure data in UnifiedTest report:
+- Test steps with status indicators
+- Screenshots and other attachments
+- Links to full Allure reports
+- Detailed test execution information
+
+### Allure Features
+
+The integration includes:
+- **Test Steps**: Displays all test steps with their status
+- **Attachments**: Shows images and provides links to other attachments
+- **Report Link**: Direct link to the full Allure report
+- **Status Tracking**: Synchronized status between UnifiedTest and Allure
