@@ -71,14 +71,37 @@ public class AllureReportReader {
             String content = Files.readString(resultFile);
             JsonObject result = gson.fromJson(content, JsonObject.class);
             
-            // Extract full name including class name if available
+            // Extract test name and handle Cucumber format
             String name = result.get("name").getAsString();
             String fullName = name;
-            if (result.has("fullName")) {
-                fullName = result.get("fullName").getAsString();
-            } else if (result.has("testClass")) {
-                String testClass = result.get("testClass").getAsString();
-                fullName = testClass + "." + name;
+            String cucumberName = null;
+            
+            // Handle Cucumber test names
+            if (result.has("labels")) {
+                JsonArray labels = result.getAsJsonArray("labels");
+                for (JsonElement label : labels) {
+                    JsonObject labelObj = label.getAsJsonObject();
+                    if ("feature".equals(labelObj.get("name").getAsString())) {
+                        String featureName = labelObj.get("value").getAsString();
+                        if (result.has("fullName")) {
+                            fullName = featureName + "." + result.get("fullName").getAsString();
+                        } else {
+                            fullName = featureName + "." + name;
+                        }
+                        cucumberName = fullName;
+                        break;
+                    }
+                }
+            }
+            
+            // Fallback to standard test name handling
+            if (cucumberName == null) {
+                if (result.has("fullName")) {
+                    fullName = result.get("fullName").getAsString();
+                } else if (result.has("testClass")) {
+                    String testClass = result.get("testClass").getAsString();
+                    fullName = testClass + "." + name;
+                }
             }
             
             String status = result.get("status").getAsString();
@@ -111,13 +134,29 @@ public class AllureReportReader {
                 });
             }
 
-            // Add both by full name and simple name for better matching
+            // Add multiple variations of the test name for better matching
             allureResults.put(fullName, testResult);
             allureResults.put(name, testResult);
+            if (cucumberName != null) {
+                allureResults.put(cucumberName, testResult);
+            }
+            
+            // Add feature name if available
+            if (result.has("labels")) {
+                JsonArray labels = result.getAsJsonArray("labels");
+                for (JsonElement label : labels) {
+                    JsonObject labelObj = label.getAsJsonObject();
+                    if ("feature".equals(labelObj.get("name").getAsString())) {
+                        String featureName = labelObj.get("value").getAsString();
+                        allureResults.put(featureName + "." + name, testResult);
+                        break;
+                    }
+                }
+            }
             
             // Log for debugging
-            project.getLogger().info("Parsed Allure result: fullName={}, name={}, status={}, steps={}, attachments={}", 
-                fullName, name, status, testResult.getSteps().size(), testResult.getAttachments().size());
+            project.getLogger().info("Parsed Allure result: fullName={}, name={}, cucumberName={}, status={}, steps={}, attachments={}", 
+                fullName, name, cucumberName, status, testResult.getSteps().size(), testResult.getAttachments().size());
             
         } catch (IOException | RuntimeException e) {
             project.getLogger().error("Failed to parse Allure result file: " + resultFile, e);
