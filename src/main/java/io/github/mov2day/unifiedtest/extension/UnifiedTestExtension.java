@@ -15,4 +15,10 @@ public interface UnifiedTestExtension {
      * @param testTask the test task that was executed
      */
     void afterTestExecution(Project project, Test testTask);
+
+    /**
+     * Configure a test task with UnifiedTest settings.
+     * @param testTask The test task to configure
+     */
+    void configureTestTask(Test testTask);
 }

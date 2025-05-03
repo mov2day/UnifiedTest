@@ -89,6 +89,112 @@ unifiedTest {
 }
 ```
 
+## 🔗 Test Management Integration
+
+UnifiedTest supports integration with popular test management systems to automatically push test results and create/update test cases. Currently supported systems:
+- Jira Zephyr
+- TestRail
+
+### Configuration
+
+#### Groovy DSL
+```groovy
+testManagement {
+    enabled = true
+    
+    // Zephyr Configuration
+    zephyr {
+        serverUrl = "https://your-jira-instance.com"
+        apiKey = project.findProperty("zephyrApiKey") ?: System.getenv("ZEPHYR_API_KEY")
+        projectKey = "PROJ"
+        testCycleName = "Regression Test Cycle"
+        createTestCases = true  // Automatically create test cases if they don't exist
+    }
+    
+    // TestRail Configuration
+    testRail {
+        serverUrl = "https://your-instance.testrail.com"
+        apiKey = project.findProperty("testRailApiKey") ?: System.getenv("TESTRAIL_API_KEY")
+        projectId = "123"
+        suiteId = "456"
+        createTestCases = true  // Automatically create test cases if they don't exist
+    }
+}
+```
+
+#### Kotlin DSL
+```kotlin
+testManagement {
+    enabled.set(true)
+    
+    zephyr {
+        serverUrl.set("https://your-jira-instance.com")
+        apiKey.set(project.findProperty("zephyrApiKey")?.toString() ?: System.getenv("ZEPHYR_API_KEY"))
+        projectKey.set("PROJ")
+        testCycleName.set("Regression Test Cycle")
+        createTestCases.set(true)
+    }
+    
+    testRail {
+        serverUrl.set("https://your-instance.testrail.com")
+        apiKey.set(project.findProperty("testRailApiKey")?.toString() ?: System.getenv("TESTRAIL_API_KEY"))
+        projectId.set("123")
+        suiteId.set("456")
+        createTestCases.set(true)
+    }
+}
+```
+
+### Test Case Mapping
+
+UnifiedTest automatically maps test cases based on the test method name. You can also explicitly map test cases using annotations:
+
+#### Zephyr Mapping
+```java
+import io.github.mov2day.unifiedtest.annotation.ZephyrTest;
+
+public class LoginTest {
+    @Test
+    @ZephyrTest(key = "PROJ-123")
+    public void testUserLogin() {
+        // Test implementation
+    }
+}
+```
+
+#### TestRail Mapping
+```java
+import io.github.mov2day.unifiedtest.annotation.TestRailCase;
+
+public class CartTest {
+    @Test
+    @TestRailCase(id = "C123")
+    public void testAddToCart() {
+        // Test implementation
+    }
+}
+```
+
+### Batch Processing
+
+UnifiedTest optimizes test result submission by batching results and sending them at the end of the test execution. This reduces API calls and improves performance. The process:
+
+1. Test results are collected during execution
+2. Results are queued in memory
+3. At the end of test execution, all results are pushed in a single batch
+4. If any push fails, the plugin will retry with exponential backoff
+
+### Security Best Practices
+
+1. Never commit API keys to version control
+2. Use environment variables or Gradle properties for sensitive data
+3. In CI/CD, use secure environment variables
+4. For local development, use `~/.gradle/gradle.properties`:
+   ```properties
+   zephyrApiKey=your-api-key
+   testRailApiKey=your-api-key
+   ```
+
 ---
 
 ## ✅ Supported Test Frameworks

@@ -6,6 +6,9 @@ import io.github.mov2day.unifiedtest.reporting.JsonReportGenerator;
 import io.github.mov2day.unifiedtest.reporting.HtmlReportGenerator;
 import io.github.mov2day.unifiedtest.reporting.OpenTelemetryExporter;
 import io.github.mov2day.unifiedtest.extension.ExtensionInvoker;
+import io.github.mov2day.unifiedtest.extension.TestManagementExtension;
+import io.github.mov2day.unifiedtest.reporting.testmanagement.TestManagementSystemFactory;
+import io.github.mov2day.unifiedtest.reporting.testmanagement.TestManagementSystem;
 import org.gradle.api.Plugin;
 import org.gradle.api.Project;
 import org.gradle.api.tasks.testing.Test;
@@ -91,6 +94,9 @@ public class UnifiedTestAgentPlugin implements Plugin<Project> {
     @Override
     public void apply(Project project) {
         UnifiedTestExtensionConfig config = project.getExtensions().create("unifiedTest", UnifiedTestExtensionConfig.class, project.getObjects());
+        TestManagementExtension testManagementExtension = project.getExtensions().create("testManagement", TestManagementExtension.class);
+        TestManagementSystemFactory testManagementFactory = new TestManagementSystemFactory();
+        
         List<TestFrameworkAdapter> adapters = Arrays.asList(
             new JUnit4Adapter(),
             new JUnit5Adapter(),
@@ -130,6 +136,9 @@ public class UnifiedTestAgentPlugin implements Plugin<Project> {
 
             // Move framework detection and listener registration to doFirst
             testTask.doFirst(task -> {
+                // Initialize test management systems
+                testManagementFactory.initialize(testManagementExtension);
+                
                 String frameworkConfig = config.getFramework().get();
                 TestFrameworkAdapter selected = null;
 
@@ -155,6 +164,31 @@ public class UnifiedTestAgentPlugin implements Plugin<Project> {
                 } else {
                     project.getLogger().warn("UnifiedTest: No supported test framework detected or configured. Falling back to default Gradle Test listeners.");
                     testTask.addTestListener(new io.github.mov2day.unifiedtest.reporting.PrettyConsoleTestListener(project, config.getTheme().get(), collector));
+                }
+            });
+
+            // Add test result callback for test management systems
+            collector.setResultCallback(result -> {
+                for (TestManagementSystem system : testManagementFactory.getAllSystems()) {
+                    if (system.isConfigured()) {
+                        system.queueTestResult(result);
+                    }
+                }
+            });
+
+            // Push results to test management systems after test execution
+            testTask.doLast(task -> {
+                for (TestManagementSystem system : testManagementFactory.getAllSystems()) {
+                    if (system.isConfigured()) {
+                        try {
+                            system.flushResults();
+                            project.getLogger().lifecycle("Successfully pushed test results to {}", 
+                                system.getName());
+                        } catch (Exception e) {
+                            project.getLogger().error("Failed to push results to {}: {}", 
+                                system.getName(), e.getMessage());
+                        }
+                    }
                 }
             });
 
