@@ -76,6 +76,13 @@ publishing {
 signing {
     useGpgCmd()
     sign publishing.publications.mavenJava
+    publishing.publications.withType(MavenPublication).configureEach {
+        if (name == 'pluginMaven' || name == 'unifiedTestAgentPluginMarkerMaven') {
+            tasks.withType(Sign).configureEach {
+                enabled = false
+            }
+        }
+    }
 }
 
 tasks.withType(PublishToMavenRepository).configureEach {
