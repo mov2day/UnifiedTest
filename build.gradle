@@ -1,6 +1,9 @@
 plugins {
     id 'java-gradle-plugin'
     id 'com.gradle.plugin-publish' version '1.2.1'
+    id 'signing'
+    id 'maven-publish'
+    id 'org.jreleaser' version '1.18.0'
 }
 
 group = 'io.github.mov2day'
@@ -9,6 +12,8 @@ version = '0.3.2'
 java {
     sourceCompatibility = JavaVersion.VERSION_17
     targetCompatibility = JavaVersion.VERSION_17
+    withJavadocJar()
+    withSourcesJar()
 }
 
 gradlePlugin {
@@ -26,9 +31,98 @@ gradlePlugin {
     }
 }
 
+publishing {
+    publications {
+        mavenJava(MavenPublication) {
+            from components.java
+            pom {
+                name = 'UnifiedTest'
+                description = 'Advanced test automation observability and reporting for JUnit4, JUnit5, and TestNG.'
+                url = 'https://github.com/mov2day/UnifiedTest'
+                licenses {
+                    license {
+                        name = 'MIT License'
+                        url = 'https://opensource.org/licenses/MIT'
+                    }
+                }
+                developers {
+                    developer {
+                        id = 'mov2day'
+                        name = 'mov2day'
+                    }
+                }
+                scm {
+                    connection = 'scm:git:git://github.com/mov2day/UnifiedTest.git'
+                    developerConnection = 'scm:git:ssh://github.com/mov2day/UnifiedTest.git'
+                    url = 'https://github.com/mov2day/UnifiedTest'
+                }
+            }
+        }
+    }
+    repositories {
+        maven {
+            name = 'sonatype'
+            def releasesRepoUrl = 'https://s01.oss.sonatype.org/service/local/staging/deploy/maven2/'
+            def snapshotsRepoUrl = 'https://s01.oss.sonatype.org/content/repositories/snapshots/'
+            url = version.endsWith('SNAPSHOT') ? snapshotsRepoUrl : releasesRepoUrl
+            credentials {
+                username = System.getenv('OSSRH_USERNAME')
+                password = System.getenv('OSSRH_PASSWORD')
+            }
+        }
+    }
+}
+
+signing {
+    useGpgCmd()
+    sign publishing.publications.mavenJava
+}
+
+tasks.withType(PublishToMavenRepository).configureEach {
+    dependsOn tasks.withType(Sign)
+}
+
+tasks.withType(PublishToMavenLocal).configureEach {
+    dependsOn tasks.withType(Sign)
+}
+
 repositories {
     mavenCentral()
     gradlePluginPortal()
+}
+
+jreleaser {
+    project {
+        copyright.set("2024-2025, The original author or authors")
+        authors.add("mov2day")
+        license.set("MIT")
+        links {
+            homepage.set("https://github.com/mov2day/UnifiedTest")
+        }
+    }
+    release {
+        github {
+            repoOwner.set("mov2day")
+            name.set("UnifiedTest")
+        }
+    }
+    signing {
+        active.set(org.jreleaser.model.Active.ALWAYS)
+        armored.set(true)
+    }
+    deploy {
+        maven {
+            nexus2 {
+                create("maven-central") {
+                    active.set(org.jreleaser.model.Active.ALWAYS)
+                    url.set("https://s01.oss.sonatype.org/service/local")
+                    closeRepository.set(true)
+                    releaseRepository.set(true)
+                    stagingRepositories.add("build/staging-deploy")
+                }
+            }
+        }
+    }
 }
 
 configurations {
@@ -64,56 +158,4 @@ tasks.register('publishAll') {
     group = 'publishing'
     description = 'Publishes to both Gradle Plugin Portal and Maven repository.'
     dependsOn 'publishPlugins', 'publish'
-}
-
-apply plugin: 'maven-publish'
-apply plugin: 'signing'
-
-publishing {
-    publications {
-        mavenJava(MavenPublication) {
-            from components.java
-            groupId = project.group
-            artifactId = 'unifiedtest'
-            version = project.version
-            pom {
-                name = 'UnifiedTest'
-                description = 'UnifiedTest Gradle plugin for unified test reporting and management.'
-                url = 'https://mov2day.github.io/UnifiedTest/'
-                licenses {
-                    license {
-                        name = 'MIT License'
-                        url = 'https://opensource.org/licenses/MIT'
-                    }
-                }
-                developers {
-                    developer {
-                        id = 'mov2day'
-                        name = 'Muthu Kumar Koodalingam'
-                        email = 'mov2day@gmail.com'
-                    }
-                }
-                scm {
-                    connection = 'scm:git:git://github.com/mov2day/UnifiedTest.git'
-                    developerConnection = 'scm:git:ssh://github.com:mov2day/UnifiedTest.git'
-                    url = 'https://github.com/mov2day/UnifiedTest'
-                }
-            }
-        }
-    }
-    repositories {
-        maven {
-            name = 'OSSRH'
-            url = 'https://s01.oss.sonatype.org/service/local/staging/deploy/maven2/'
-            credentials {
-                username = findProperty('ossrhUsername') ?: System.getenv('OSSRH_USERNAME')
-                password = findProperty('ossrhPassword') ?: System.getenv('OSSRH_PASSWORD')
-            }
-        }
-    }
-}
-
-signing {
-    useGpgCmd()
-    sign publishing.publications.mavenJava
 }
