@@ -22,6 +22,13 @@ public class UnifiedTestResultCollector implements TestListener {
     private final Map<String, io.github.mov2day.unifiedtest.collector.UnifiedTestResult> resultMap = new ConcurrentHashMap<>();
     private Consumer<UnifiedTestResult> resultCallback;
 
+    /**
+     * Default constructor required for ServiceLoader.
+     */
+    public UnifiedTestResultCollector() {
+        // Initialize with default settings
+    }
+
     @Override public void beforeSuite(TestDescriptor suite) {}
     @Override public void afterSuite(TestDescriptor suite, TestResult result) {}
     @Override public void beforeTest(TestDescriptor testDescriptor) {}

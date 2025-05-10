@@ -25,10 +25,17 @@ public class UnifiedJUnit5Listener implements TestExecutionListener {
     private static final AtomicInteger total = new AtomicInteger();
     private static final Map<TestIdentifier, Long> startTimes = new ConcurrentHashMap<>();
 
-    static {
+    /**
+     * Default constructor required for ServiceLoader.
+     */
+    public UnifiedJUnit5Listener() {
         // Initialize default collector and reporter for Maven projects
-        collector = new UnifiedTestResultCollector();
-        reporter = new ConsoleReporter("standard");
+        if (collector == null) {
+            collector = new UnifiedTestResultCollector();
+        }
+        if (reporter == null) {
+            reporter = new ConsoleReporter("standard");
+        }
     }
 
     /**
