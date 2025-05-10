@@ -25,6 +25,12 @@ public class UnifiedJUnit5Listener implements TestExecutionListener {
     private static final AtomicInteger total = new AtomicInteger();
     private static final Map<TestIdentifier, Long> startTimes = new ConcurrentHashMap<>();
 
+    static {
+        // Initialize default collector and reporter for Maven projects
+        collector = new UnifiedTestResultCollector();
+        reporter = new ConsoleReporter("standard");
+    }
+
     /**
      * Sets the collector and reporter for the listener.
      * This method should be called before test execution starts.
@@ -49,7 +55,9 @@ public class UnifiedJUnit5Listener implements TestExecutionListener {
     public void executionStarted(TestIdentifier testIdentifier) {
         if (testIdentifier.isTest()) {
             String testName = getTestName(testIdentifier);
-            reporter.testRunning(testName);
+            if (reporter != null) {
+                reporter.testRunning(testName);
+            }
             startTimes.put(testIdentifier, System.currentTimeMillis());
         }
     }
@@ -58,15 +66,19 @@ public class UnifiedJUnit5Listener implements TestExecutionListener {
     public void executionSkipped(TestIdentifier testIdentifier, String reason) {
         if (testIdentifier.isTest()) {
             String testName = getTestName(testIdentifier);
-            reporter.testResult(testName, "SKIP");
+            if (reporter != null) {
+                reporter.testResult(testName, "SKIP");
+            }
             skipped.incrementAndGet();
             total.incrementAndGet();
-            collector.addResult(new UnifiedTestResult(
-                getClassName(testIdentifier),
-                getMethodName(testIdentifier),
-                "SKIP",
-                0
-            ));
+            if (collector != null) {
+                collector.addResult(new UnifiedTestResult(
+                    getClassName(testIdentifier),
+                    getMethodName(testIdentifier),
+                    "SKIP",
+                    0
+                ));
+            }
         }
     }
 
@@ -103,22 +115,28 @@ public class UnifiedJUnit5Listener implements TestExecutionListener {
                     status = testExecutionResult.getStatus().toString();
             }
             total.incrementAndGet();
-            reporter.testResult(testName, status);
+            if (reporter != null) {
+                reporter.testResult(testName, status);
+            }
 
-            collector.addResult(new UnifiedTestResult(
-                getClassName(testIdentifier),
-                getMethodName(testIdentifier),
-                status,
-                message,
-                trace,
-                duration
-            ));
+            if (collector != null) {
+                collector.addResult(new UnifiedTestResult(
+                    getClassName(testIdentifier),
+                    getMethodName(testIdentifier),
+                    status,
+                    message,
+                    trace,
+                    duration
+                ));
+            }
         }
     }
 
     @Override
     public void testPlanExecutionFinished(TestPlan testPlan) {
-        reporter.summary(total.get(), passed.get(), failed.get(), skipped.get());
+        if (reporter != null) {
+            reporter.summary(total.get(), passed.get(), failed.get(), skipped.get());
+        }
     }
 
     private String getTestName(TestIdentifier testIdentifier) {
