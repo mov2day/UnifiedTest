@@ -444,3 +444,70 @@ The integration includes:
 - **Attachments**: Shows images and provides links to other attachments
 - **Report Link**: Direct link to the full Allure report
 - **Status Tracking**: Synchronized status between UnifiedTest and Allure
+
+## 🚀 Maven Integration
+
+UnifiedTest now works with Maven projects! Follow these steps to set up UnifiedTest in your Maven project:
+
+### 1. Add the dependency
+```xml
+<dependency>
+    <groupId>io.github.mov2day</groupId>
+    <artifactId>unifiedtest</artifactId>
+    <version>0.3.5</version>
+    <scope>test</scope>
+</dependency>
+```
+
+### 2. Ensure JUnit platform launcher is available
+```xml
+<dependency>
+    <groupId>org.junit.platform</groupId>
+    <artifactId>junit-platform-launcher</artifactId>
+    <version>1.10.2</version>
+    <scope>test</scope>
+</dependency>
+```
+
+### 3. Configure the Surefire plugin
+```xml
+<plugin>
+    <groupId>org.apache.maven.plugins</groupId>
+    <artifactId>maven-surefire-plugin</artifactId>
+    <version>3.5.3</version>
+    <configuration>
+        <properties>
+            <configurationParameters>
+                junit.jupiter.extensions.autodetection.enabled=true
+            </configurationParameters>
+        </properties>
+    </configuration>
+</plugin>
+```
+
+### 4. Register the listener
+Create the file:
+`src/test/resources/META-INF/services/org.junit.platform.launcher.TestExecutionListener`
+
+Add the line:
+`io.github.mov2day.unifiedtest.reporting.UnifiedJUnit5Listener`
+
+### 5. Configure reports (optional)
+Set these system properties in your Surefire configuration to customize reporting:
+
+```xml
+<configuration>
+    <systemPropertyVariables>
+        <unifiedtest.reportDir>target/unifiedtest</unifiedtest.reportDir>
+        <unifiedtest.jsonEnabled>true</unifiedtest.jsonEnabled>
+        <unifiedtest.htmlEnabled>true</unifiedtest.htmlEnabled>
+    </systemPropertyVariables>
+</configuration>
+```
+
+### 6. Run your tests
+```bash
+mvn test
+```
+
+Reports will be generated in `target/unifiedtest/reports/`.

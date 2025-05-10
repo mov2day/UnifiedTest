@@ -161,6 +161,18 @@ public class UnifiedJUnit5Listener implements TestExecutionListener {
         if (reporter != null) {
             reporter.summary(total.get(), passed.get(), failed.get(), skipped.get());
         }
+        
+        // Generate reports in Maven environment
+        boolean isMaven = System.getProperty("maven.home") != null || 
+                         System.getProperty("maven.conf") != null;
+        if (isMaven && collector != null) {
+            // Default to target/unifiedtest for Maven projects
+            String targetDir = System.getProperty("unifiedtest.reportDir", "target/unifiedtest");
+            boolean generateJson = Boolean.parseBoolean(System.getProperty("unifiedtest.jsonEnabled", "true"));
+            boolean generateHtml = Boolean.parseBoolean(System.getProperty("unifiedtest.htmlEnabled", "true"));
+            
+            MavenReportGenerator.generateReports(collector, targetDir, generateJson, generateHtml);
+        }
     }
 
     private String getTestName(TestIdentifier testIdentifier) {
