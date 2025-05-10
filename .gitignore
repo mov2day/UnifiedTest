@@ -1,11 +1,9 @@
 # Gradle
 .gradle/
 build/
-!gradle/wrapper/gradle-wrapper.jar
 
 # Java
 *.class
-*.jar
 *.war
 *.ear
 
@@ -42,3 +40,7 @@ build/pluginDescriptors/
 # Other
 *.bak
 copilot-instructions.md
+.jreleaser.yml
+bundle.sh
+jreleaser.yml
+UnifiedTestAgent-*.zip

@@ -2,20 +2,22 @@ package io.github.mov2day.unifiedtest.framework;
 
 import org.gradle.api.Project;
 import org.gradle.api.artifacts.Configuration;
-import java.util.HashSet;
-import java.util.Set;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /**
- * Detects supported test frameworks (JUnit4, JUnit5, TestNG) from project dependencies.
+ * Utility class for detecting test frameworks in a Gradle project.
+ * Analyzes project dependencies to determine which test frameworks are present.
  */
 public class FrameworkDetector {
     /**
-     * Returns a set of detected test frameworks for the given project.
-     * @param project the Gradle project
-     * @return set of framework names (e.g., JUnit4, JUnit5, TestNG)
+     * Detects test frameworks present in the project's dependencies.
+     * @param project the Gradle project to analyze
+     * @return list of detected test framework names
      */
-    public static Set<String> detect(Project project) {
-        Set<String> frameworks = new HashSet<>();
+    public static List<String> detect(Project project) {
+        List<String> frameworks = new ArrayList<>();
         Configuration testImplementation = project.getConfigurations().findByName("testImplementation");
         if (testImplementation != null) {
             testImplementation.getAllDependencies().forEach(dep -> {
