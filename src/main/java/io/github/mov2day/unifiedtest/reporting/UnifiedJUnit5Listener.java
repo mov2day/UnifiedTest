@@ -38,6 +38,10 @@ public class UnifiedJUnit5Listener implements TestExecutionListener {
                              System.getProperty("maven.conf") != null;
             
             if (isMaven) {
+                System.out.println("UnifiedTest: Initializing for Maven environment");
+                // For Maven, ensure the service loader file exists
+                MavenSetupHelper.ensureServiceLoaderFileExists();
+                MavenSetupHelper.ensureReportDirectoryExists();
                 collector = new MavenTestResultCollector();
             } else {
                 try {
@@ -165,13 +169,33 @@ public class UnifiedJUnit5Listener implements TestExecutionListener {
         // Generate reports in Maven environment
         boolean isMaven = System.getProperty("maven.home") != null || 
                          System.getProperty("maven.conf") != null;
+        
+        System.out.println("UnifiedTest: Test plan execution finished");
+        System.out.println("UnifiedTest: Is Maven environment: " + isMaven);
+        
+        if (collector != null) {
+            System.out.println("UnifiedTest: Collector has " + collector.getResults().size() + " test results");
+        } else {
+            System.out.println("UnifiedTest: Collector is null");
+        }
+        
         if (isMaven && collector != null) {
             // Default to target/unifiedtest for Maven projects
             String targetDir = System.getProperty("unifiedtest.reportDir", "target/unifiedtest");
             boolean generateJson = Boolean.parseBoolean(System.getProperty("unifiedtest.jsonEnabled", "true"));
             boolean generateHtml = Boolean.parseBoolean(System.getProperty("unifiedtest.htmlEnabled", "true"));
             
-            MavenReportGenerator.generateReports(collector, targetDir, generateJson, generateHtml);
+            System.out.println("UnifiedTest: Generating reports in: " + targetDir);
+            System.out.println("UnifiedTest: JSON reports enabled: " + generateJson);
+            System.out.println("UnifiedTest: HTML reports enabled: " + generateHtml);
+            
+            try {
+                MavenReportGenerator.generateReports(collector, targetDir, generateJson, generateHtml);
+                System.out.println("UnifiedTest: Reports generated successfully");
+            } catch (Exception e) {
+                System.err.println("UnifiedTest: Error generating reports: " + e.getMessage());
+                e.printStackTrace();
+            }
         }
     }
 

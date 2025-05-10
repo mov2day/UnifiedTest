@@ -19,6 +19,7 @@ public class MavenTestResultCollector implements ITestResultCollector {
      */
     public MavenTestResultCollector() {
         // Initialize with default settings
+        System.out.println("UnifiedTest: MavenTestResultCollector created");
     }
 
     @Override
@@ -27,6 +28,7 @@ public class MavenTestResultCollector implements ITestResultCollector {
         if (!resultMap.containsKey(key)) {
             resultMap.put(key, result);
             results.add(result);
+            System.out.println("UnifiedTest: Added result for test: " + key + " with status: " + result.status);
         }
     }
 
