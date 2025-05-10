@@ -5,6 +5,8 @@ import org.junit.platform.launcher.TestExecutionListener;
 import org.junit.platform.launcher.TestIdentifier;
 import org.junit.platform.launcher.TestPlan;
 import io.github.mov2day.unifiedtest.collector.UnifiedTestResultCollector;
+import io.github.mov2day.unifiedtest.collector.MavenTestResultCollector;
+import io.github.mov2day.unifiedtest.collector.ITestResultCollector;
 import io.github.mov2day.unifiedtest.collector.UnifiedTestResult;
 import java.io.PrintWriter;
 import java.io.StringWriter;
@@ -17,7 +19,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * Captures JUnit5 test execution events and forwards them to the UnifiedTest collector and reporter.
  */
 public class UnifiedJUnit5Listener implements TestExecutionListener {
-    private static UnifiedTestResultCollector collector;
+    private static ITestResultCollector collector;
     private static ConsoleReporter reporter;
     private static final AtomicInteger passed = new AtomicInteger();
     private static final AtomicInteger failed = new AtomicInteger();
@@ -31,8 +33,23 @@ public class UnifiedJUnit5Listener implements TestExecutionListener {
     public UnifiedJUnit5Listener() {
         // Initialize default collector and reporter for Maven projects
         if (collector == null) {
-            collector = new UnifiedTestResultCollector();
+            // Check if we're in a Maven environment
+            boolean isMaven = System.getProperty("maven.home") != null || 
+                             System.getProperty("maven.conf") != null;
+            
+            if (isMaven) {
+                collector = new MavenTestResultCollector();
+            } else {
+                try {
+                    // Try to create the Gradle collector, but catch ClassNotFoundException
+                    collector = new UnifiedTestResultCollector();
+                } catch (NoClassDefFoundError e) {
+                    // Fallback to Maven collector
+                    collector = new MavenTestResultCollector();
+                }
+            }
         }
+        
         if (reporter == null) {
             reporter = new ConsoleReporter("standard");
         }
@@ -44,7 +61,7 @@ public class UnifiedJUnit5Listener implements TestExecutionListener {
      * @param collector the test result collector
      * @param reporter the console reporter
      */
-    public static void setCollectorAndReporter(UnifiedTestResultCollector collector, ConsoleReporter reporter) {
+    public static void setCollectorAndReporter(ITestResultCollector collector, ConsoleReporter reporter) {
         UnifiedJUnit5Listener.collector = collector;
         UnifiedJUnit5Listener.reporter = reporter;
     }

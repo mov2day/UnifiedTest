@@ -17,7 +17,7 @@ import java.time.Instant;
  * Collects and stores test results from various test frameworks.
  * Implements TestListener to receive test execution events.
  */
-public class UnifiedTestResultCollector implements TestListener {
+public class UnifiedTestResultCollector implements TestListener, ITestResultCollector {
     private final List<io.github.mov2day.unifiedtest.collector.UnifiedTestResult> results = new ArrayList<>();
     private final Map<String, io.github.mov2day.unifiedtest.collector.UnifiedTestResult> resultMap = new ConcurrentHashMap<>();
     private Consumer<UnifiedTestResult> resultCallback;
