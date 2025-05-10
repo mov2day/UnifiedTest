@@ -26,8 +26,27 @@ public class MavenReportGenerator {
             boolean generateJson, 
             boolean generateHtml) {
         
+        // Debug information
+        System.out.println("UnifiedTest: Starting report generation");
+        System.out.println("UnifiedTest: Target directory: " + targetDir);
+        
+        // Check if we have results
+        List<UnifiedTestResult> results = collector.getResults();
+        if (results == null || results.isEmpty()) {
+            System.out.println("UnifiedTest: No test results to report");
+            return;
+        }
+        
+        System.out.println("UnifiedTest: Processing " + results.size() + " test results");
+        
+        // Ensure reports directory exists
         File reportsDir = new File(targetDir, "reports");
-        reportsDir.mkdirs();
+        if (!reportsDir.exists()) {
+            boolean created = reportsDir.mkdirs();
+            System.out.println("UnifiedTest: Created reports directory: " + reportsDir.getAbsolutePath() + ", success: " + created);
+        } else {
+            System.out.println("UnifiedTest: Using existing reports directory: " + reportsDir.getAbsolutePath());
+        }
         
         if (generateJson) {
             generateJsonReport(collector, reportsDir);

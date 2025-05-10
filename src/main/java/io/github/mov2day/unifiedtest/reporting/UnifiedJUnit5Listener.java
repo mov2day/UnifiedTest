@@ -13,6 +13,7 @@ import java.io.StringWriter;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.io.File;
 
 /**
  * JUnit 5 test listener that integrates with UnifiedTest reporting.
@@ -167,8 +168,7 @@ public class UnifiedJUnit5Listener implements TestExecutionListener {
         }
         
         // Generate reports in Maven environment
-        boolean isMaven = System.getProperty("maven.home") != null || 
-                         System.getProperty("maven.conf") != null;
+        boolean isMaven = detectMavenEnvironment();
         
         System.out.println("UnifiedTest: Test plan execution finished");
         System.out.println("UnifiedTest: Is Maven environment: " + isMaven);
@@ -179,9 +179,10 @@ public class UnifiedJUnit5Listener implements TestExecutionListener {
             System.out.println("UnifiedTest: Collector is null");
         }
         
-        if (isMaven && collector != null) {
+        // Always generate reports if we have results, regardless of environment
+        if (collector != null && collector.getResults().size() > 0) {
             // Default to target/unifiedtest for Maven projects
-            String targetDir = System.getProperty("unifiedtest.reportDir", "target/unifiedtest");
+            String targetDir = System.getProperty("unifiedtest.reportDir", isMaven ? "target/unifiedtest" : "build/unifiedtest");
             boolean generateJson = Boolean.parseBoolean(System.getProperty("unifiedtest.jsonEnabled", "true"));
             boolean generateHtml = Boolean.parseBoolean(System.getProperty("unifiedtest.htmlEnabled", "true"));
             
@@ -197,6 +198,36 @@ public class UnifiedJUnit5Listener implements TestExecutionListener {
                 e.printStackTrace();
             }
         }
+    }
+
+    /**
+     * Detects if we are running in a Maven environment using multiple indicators.
+     * @return true if Maven is detected, false otherwise
+     */
+    private boolean detectMavenEnvironment() {
+        // Check system properties
+        boolean hasMavenProperty = System.getProperty("maven.home") != null || 
+                                  System.getProperty("maven.conf") != null;
+        
+        // Force Maven mode can be enabled via system property
+        boolean forceMavenMode = Boolean.parseBoolean(System.getProperty("unifiedtest.forceMavenMode", "false"));
+        
+        // Check for Maven-specific files/directories
+        boolean hasPomXml = new File("pom.xml").exists();
+        boolean hasTargetDir = new File("target").exists();
+        
+        // If force mode is enabled, or if we detect Maven artifacts, assume Maven
+        boolean isMaven = forceMavenMode || hasMavenProperty || (hasPomXml && hasTargetDir);
+        
+        if (forceMavenMode) {
+            System.out.println("UnifiedTest: Maven mode forced by system property");
+        }
+        
+        if (hasPomXml && hasTargetDir) {
+            System.out.println("UnifiedTest: Maven detected by project structure (pom.xml and target dir)");
+        }
+        
+        return isMaven;
     }
 
     private String getTestName(TestIdentifier testIdentifier) {

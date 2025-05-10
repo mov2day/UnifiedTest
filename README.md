@@ -501,6 +501,8 @@ Set these system properties in your Surefire configuration to customize reportin
         <unifiedtest.reportDir>target/unifiedtest</unifiedtest.reportDir>
         <unifiedtest.jsonEnabled>true</unifiedtest.jsonEnabled>
         <unifiedtest.htmlEnabled>true</unifiedtest.htmlEnabled>
+        <!-- Force Maven mode if automatic detection fails -->
+        <unifiedtest.forceMavenMode>true</unifiedtest.forceMavenMode>
     </systemPropertyVariables>
 </configuration>
 ```
