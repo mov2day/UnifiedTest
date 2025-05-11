@@ -5,9 +5,16 @@ package io.github.mov2day.unifiedtest.reporting;
  */
 public class ConsoleReporter {
     /**
-     * Theme options for console output.
+     * Theme options for console output formatting.
      */
-    public enum Theme { STANDARD, MOCHA, MINIMAL }
+    public enum Theme { 
+        /** Standard console output theme with basic formatting */
+        STANDARD, 
+        /** Mocha-inspired theme with rich color scheme */
+        MOCHA, 
+        /** Minimal theme with essential formatting only */
+        MINIMAL 
+    }
     private final Theme theme;
 
     /**

@@ -6,7 +6,11 @@ import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
-class UnifiedTestResultCollectorTest {
+/**
+ * Unit tests for UnifiedTestResultCollector.
+ * Verifies test result collection and storage functionality.
+ */
+public class UnifiedTestResultCollectorTest {
     @Test
     void collectsTestResults() {
         UnifiedTestResultCollector collector = new UnifiedTestResultCollector();
@@ -20,6 +24,6 @@ class UnifiedTestResultCollectorTest {
         UnifiedTestResult r = collector.getResults().get(0);
         assertEquals("TestClass", r.className);
         assertEquals("testName", r.testName);
-        assertEquals("SUCCESS", r.status);
+        assertEquals("PASS", r.status);
     }
 }

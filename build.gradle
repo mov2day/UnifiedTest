@@ -1,12 +1,20 @@
 plugins {
     id 'java-gradle-plugin'
     id 'com.gradle.plugin-publish' version '1.2.1'
-    // id 'maven-publish' // Removed for Gradle Plugin Portal only
-    // id 'signing' // Removed for Gradle Plugin Portal only
+    id 'signing'
+    id 'maven-publish'
+    id 'org.jreleaser' version '1.18.0'
 }
 
 group = 'io.github.mov2day'
-version = '0.1.0'
+version = '0.3.9'
+
+java {
+    sourceCompatibility = JavaVersion.VERSION_17
+    targetCompatibility = JavaVersion.VERSION_17
+    withJavadocJar()
+    withSourcesJar()
+}
 
 gradlePlugin {
     website.set('https://github.com/mov2day/UnifiedTest')
@@ -23,9 +31,113 @@ gradlePlugin {
     }
 }
 
+publishing {
+    publications {
+        mavenJava(MavenPublication) {
+            from components.java
+            pom {
+                name = 'UnifiedTest'
+                description = 'Advanced test automation observability and reporting for JUnit4, JUnit5, and TestNG.'
+                url = 'https://github.com/mov2day/UnifiedTest'
+                licenses {
+                    license {
+                        name = 'MIT License'
+                        url = 'https://opensource.org/licenses/MIT'
+                    }
+                }
+                developers {
+                    developer {
+                        id = 'mov2day'
+                        name = 'mov2day'
+                    }
+                }
+                scm {
+                    connection = 'scm:git:git://github.com/mov2day/UnifiedTest.git'
+                    developerConnection = 'scm:git:ssh://github.com/mov2day/UnifiedTest.git'
+                    url = 'https://github.com/mov2day/UnifiedTest'
+                }
+            }
+        }
+    }
+    repositories {
+        maven {
+            name = 'sonatype'
+            def releasesRepoUrl = 'https://s01.oss.sonatype.org/service/local/staging/deploy/maven2/'
+            def snapshotsRepoUrl = 'https://s01.oss.sonatype.org/content/repositories/snapshots/'
+            url = version.endsWith('SNAPSHOT') ? snapshotsRepoUrl : releasesRepoUrl
+            credentials {
+                username = System.getenv('OSSRH_USERNAME')
+                password = System.getenv('OSSRH_PASSWORD')
+            }
+        }
+    }
+}
+
+signing {
+    useGpgCmd()
+    sign publishing.publications.mavenJava
+    publishing.publications.withType(MavenPublication).configureEach {
+        if (name == 'pluginMaven' || name == 'unifiedTestAgentPluginMarkerMaven') {
+            tasks.withType(Sign).configureEach {
+                enabled = false
+            }
+        }
+    }
+}
+
+tasks.withType(PublishToMavenRepository).configureEach {
+    dependsOn tasks.withType(Sign)
+}
+
+tasks.withType(PublishToMavenLocal).configureEach {
+    dependsOn tasks.withType(Sign)
+}
+
 repositories {
     mavenCentral()
     gradlePluginPortal()
+}
+
+jreleaser {
+    project {
+        copyright.set("2024-2025, The original author or authors")
+        authors.add("mov2day")
+        license.set("MIT")
+        links {
+            homepage.set("https://github.com/mov2day/UnifiedTest")
+        }
+    }
+    release {
+        github {
+            repoOwner.set("mov2day")
+            name.set("UnifiedTest")
+        }
+    }
+    signing {
+        active.set(org.jreleaser.model.Active.ALWAYS)
+        armored.set(true)
+    }
+    deploy {
+        maven {
+            nexus2 {
+                create("maven-central") {
+                    active.set(org.jreleaser.model.Active.ALWAYS)
+                    url.set("https://s01.oss.sonatype.org/service/local")
+                    closeRepository.set(true)
+                    releaseRepository.set(true)
+                    stagingRepositories.add("build/staging-deploy")
+                }
+            }
+        }
+    }
+}
+
+configurations {
+    implementation {
+        resolutionStrategy {
+            force 'com.google.code.gson:gson:2.10.1'
+        }
+    }
 }
 
 dependencies {
@@ -36,8 +148,13 @@ dependencies {
     implementation 'junit:junit:4.13.2'
     implementation 'org.testng:testng:7.10.2'
     implementation 'javax.inject:javax.inject:1'
+    implementation 'com.google.code.gson:gson:2.10.1'
     testImplementation 'org.junit.jupiter:junit-jupiter:5.10.2'
-    testImplementation 'org.mockito:mockito-core:5.2.0'
+    testImplementation 'org.mockito:mockito-core:5.10.0'
+    testImplementation 'org.mockito:mockito-junit-jupiter:5.10.0'
+    testImplementation 'net.bytebuddy:byte-buddy:1.14.12'
+    testImplementation 'net.bytebuddy:byte-buddy-agent:1.14.12'
+    testImplementation gradleTestKit()
 }
 
 test {

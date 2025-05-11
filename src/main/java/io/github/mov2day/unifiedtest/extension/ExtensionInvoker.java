@@ -6,7 +6,8 @@ import org.gradle.api.tasks.testing.Test;
 import java.util.ServiceLoader;
 
 /**
- * Invokes UnifiedTestExtension hooks after test execution using ServiceLoader.
+ * Handles the invocation of UnifiedTest extensions.
+ * Provides functionality to register and execute test extensions during the test lifecycle.
  */
 public class ExtensionInvoker {
     /**
