@@ -7,7 +7,7 @@ plugins {
 }
 
 group = 'io.github.mov2day'
-version = '0.3.8'
+version = '0.3.9'
 
 java {
     sourceCompatibility = JavaVersion.VERSION_17

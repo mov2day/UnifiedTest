@@ -205,6 +205,13 @@ public class UnifiedJUnit5Listener implements TestExecutionListener {
      * @return true if Maven is detected, false otherwise
      */
     private boolean detectMavenEnvironment() {
+        // Check if Gradle environment is explicitly set
+        boolean isGradle = "gradle".equals(System.getProperty("unifiedtest.environment"));
+        if (isGradle) {
+            System.out.println("UnifiedTest: Gradle environment detected from system property");
+            return false;
+        }
+        
         // Check system properties
         boolean hasMavenProperty = System.getProperty("maven.home") != null || 
                                   System.getProperty("maven.conf") != null;
@@ -215,6 +222,17 @@ public class UnifiedJUnit5Listener implements TestExecutionListener {
         // Check for Maven-specific files/directories
         boolean hasPomXml = new File("pom.xml").exists();
         boolean hasTargetDir = new File("target").exists();
+        
+        // Check for Gradle-specific files/directories
+        boolean hasGradleFiles = new File("build.gradle").exists() || 
+                                new File("build.gradle.kts").exists() ||
+                                new File("settings.gradle").exists();
+        
+        // If Gradle files are present, and no Maven force flag, assume Gradle
+        if (hasGradleFiles && !forceMavenMode) {
+            System.out.println("UnifiedTest: Gradle environment detected based on project files");
+            return false;
+        }
         
         // If force mode is enabled, or if we detect Maven artifacts, assume Maven
         boolean isMaven = forceMavenMode || hasMavenProperty || (hasPomXml && hasTargetDir);
@@ -236,18 +254,67 @@ public class UnifiedJUnit5Listener implements TestExecutionListener {
 
     private String getClassName(TestIdentifier testIdentifier) {
         String uniqueId = testIdentifier.getUniqueId();
-        // Extract class name from uniqueId which is in format: [engine:junit-jupiter]/[class:ClassName]/[method:methodName]
-        int classStart = uniqueId.indexOf("[class:") + 7;
-        int classEnd = uniqueId.indexOf("]", classStart);
-        return uniqueId.substring(classStart, classEnd);
+        
+        // Handle parameterized tests and regular tests
+        try {
+            // Extract class name from uniqueId which is in format: [engine:junit-jupiter]/[class:ClassName]/[method:methodName]
+            // or for parameterized tests: [engine:junit-jupiter]/[class:ClassName]/[test-template:methodName]/[test-template-invocation:n]
+            int classStart = uniqueId.indexOf("[class:") + 7;
+            int classEnd = uniqueId.indexOf("]", classStart);
+            return uniqueId.substring(classStart, classEnd);
+        } catch (IndexOutOfBoundsException e) {
+            // Fallback to display name if ID parsing fails
+            System.out.println("UnifiedTest: Warning - Failed to parse class name from: " + uniqueId);
+            return testIdentifier.getDisplayName();
+        }
     }
 
     private String getMethodName(TestIdentifier testIdentifier) {
         String uniqueId = testIdentifier.getUniqueId();
-        // Extract method name from uniqueId which is in format: [engine:junit-jupiter]/[class:ClassName]/[method:methodName]
-        int methodStart = uniqueId.indexOf("[method:") + 8;
-        int methodEnd = uniqueId.indexOf("]", methodStart);
-        return uniqueId.substring(methodStart, methodEnd);
+        String displayName = testIdentifier.getDisplayName();
+        
+        try {
+            // For parameterized tests, we need to handle test-template segments
+            if (uniqueId.contains("[test-template:")) {
+                int methodStart = uniqueId.indexOf("[test-template:") + 15;
+                int methodEnd = uniqueId.indexOf("]", methodStart);
+                String methodName = uniqueId.substring(methodStart, methodEnd);
+                
+                // Try to extract parameter information from display name
+                if (displayName.contains("(") && displayName.endsWith(")")) {
+                    int paramStart = displayName.indexOf("(");
+                    String params = displayName.substring(paramStart);
+                    // Return method name with parameters
+                    return methodName + params;
+                }
+                
+                // Also check for test-template-invocation which has the parameter index
+                if (uniqueId.contains("[test-template-invocation:")) {
+                    int invocationStart = uniqueId.indexOf("[test-template-invocation:") + 26;
+                    int invocationEnd = uniqueId.indexOf("]", invocationStart);
+                    String invocation = uniqueId.substring(invocationStart, invocationEnd);
+                    return methodName + "[" + invocation + "]";
+                }
+                
+                return methodName;
+            }
+            
+            // Regular test methods
+            int methodStart = uniqueId.indexOf("[method:") + 8;
+            int methodEnd = uniqueId.indexOf("]", methodStart);
+            String methodName = uniqueId.substring(methodStart, methodEnd);
+            
+            // For dynamic tests, add the display name
+            if (uniqueId.contains("[dynamic-test:")) {
+                return methodName + "-" + displayName;
+            }
+            
+            return methodName;
+        } catch (IndexOutOfBoundsException e) {
+            // Fallback to display name if ID parsing fails
+            System.out.println("UnifiedTest: Warning - Failed to parse method name from: " + uniqueId);
+            return displayName;
+        }
     }
 
     private long getDurationAndRemove(TestIdentifier testIdentifier) {

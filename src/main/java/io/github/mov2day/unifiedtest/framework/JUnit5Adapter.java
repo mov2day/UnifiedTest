@@ -22,12 +22,21 @@ public class JUnit5Adapter implements TestFrameworkAdapter {
     @Override
     public void registerListeners(Project project, Test testTask, UnifiedTestResultCollector collector, ConsoleReporter reporter) {
         testTask.useJUnitPlatform();
+        
         // Set the collector and reporter for the JUnit 5 listener
         UnifiedJUnit5Listener.setCollectorAndReporter(collector, reporter);
+        
+        // For gradle test task, explicitly add a property to mark it as Gradle
+        testTask.systemProperty("unifiedtest.environment", "gradle");
+        
         // Register the JUnit 5 listener using system property
         System.setProperty("junit.jupiter.extensions.autodetection.enabled", "true");
+        
         // Add the pretty console listener
         testTask.addTestListener(new PrettyConsoleTestListener(project, getThemeFromConfig(project), collector));
+        
+        // Log that Gradle adapter is being used
+        project.getLogger().lifecycle("UnifiedTest: Gradle adapter for JUnit 5 registered");
     }
 
     @Override

@@ -449,12 +449,18 @@ The integration includes:
 
 UnifiedTest now works with Maven projects! Follow these steps to set up UnifiedTest in your Maven project:
 
+### Features
+- Complete Maven integration with report generation
+- Support for JUnit 5 parameterized tests
+- Automatic environment detection
+- HTML and JSON report generation
+
 ### 1. Add the dependency
 ```xml
 <dependency>
     <groupId>io.github.mov2day</groupId>
     <artifactId>unifiedtest</artifactId>
-    <version>0.3.5</version>
+    <version>0.3.9</version>
     <scope>test</scope>
 </dependency>
 ```
