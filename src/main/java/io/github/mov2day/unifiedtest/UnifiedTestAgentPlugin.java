@@ -15,11 +15,8 @@ import org.gradle.api.tasks.testing.Test;
 import org.gradle.api.provider.Property;
 import org.gradle.api.model.ObjectFactory;
 import javax.inject.Inject;
+import io.github.mov2day.unifiedtest.framework.FrameworkDetector;
 import io.github.mov2day.unifiedtest.framework.TestFrameworkAdapter;
-import io.github.mov2day.unifiedtest.framework.JUnit4Adapter;
-import io.github.mov2day.unifiedtest.framework.JUnit5Adapter;
-import io.github.mov2day.unifiedtest.framework.TestNGAdapter;
-import java.util.Arrays;
 import java.util.List;
 import java.io.File;
 
@@ -97,11 +94,7 @@ public class UnifiedTestAgentPlugin implements Plugin<Project> {
         TestManagementExtension testManagementExtension = project.getExtensions().create("testManagement", TestManagementExtension.class);
         TestManagementSystemFactory testManagementFactory = new TestManagementSystemFactory();
         
-        List<TestFrameworkAdapter> adapters = Arrays.asList(
-            new JUnit4Adapter(),
-            new JUnit5Adapter(),
-            new TestNGAdapter()
-        );
+        List<TestFrameworkAdapter> adapters = FrameworkDetector.getAdapters();
 
         // 1. Register report tasks for all test tasks
         project.getTasks().withType(Test.class).all(testTask -> {
