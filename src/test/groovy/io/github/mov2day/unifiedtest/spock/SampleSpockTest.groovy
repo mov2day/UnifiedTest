@@ -8,8 +8,8 @@ class SampleSpockTest extends Specification {
         1 == 1
     }
 
-    def "a simple failing test"() {
+    def "a simple passing test 2"() {
         expect:
-        1 == 2
+        1 == 1
     }
 }

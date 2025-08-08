@@ -43,10 +43,6 @@ public class JUnit5Adapter implements TestFrameworkAdapter {
     public String getName() { return "JUnit5"; }
     
     private String getThemeFromConfig(Project project) {
-        try {
-            return project.getExtensions().getByType(UnifiedTestAgentPlugin.UnifiedTestExtensionConfig.class).getTheme().get();
-        } catch (Exception e) {
-            return "standard"; // Default fallback
-        }
+        return FrameworkUtils.getThemeFromConfig(project);
     }
 }

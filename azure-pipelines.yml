@@ -1,0 +1,22 @@
+trigger:
+- main
+
+pool:
+  vmImage: 'ubuntu-latest'
+
+steps:
+- task: Gradle@2
+  inputs:
+    workingDirectory: ''
+    gradleWrapperFile: 'gradlew'
+    gradleOptions: '-Xmx3072m'
+    publishJUnitResults: true
+    testResultsFiles: 'build/test-results/**/*.xml'
+    tasks: 'test'
+
+- task: PublishBuildArtifacts@1
+  inputs:
+    pathToPublish: 'build/unifiedtest/reports'
+    artifactName: 'unified-test-reports'
+    publishLocation: 'Container'
+  condition: succeededOrFailed()

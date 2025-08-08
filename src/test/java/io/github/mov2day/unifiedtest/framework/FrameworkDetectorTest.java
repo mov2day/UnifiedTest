@@ -5,8 +5,6 @@ import org.gradle.api.artifacts.Configuration;
 import org.gradle.api.artifacts.ConfigurationContainer;
 import org.gradle.api.artifacts.Dependency;
 import org.gradle.api.artifacts.DependencySet;
-import org.gradle.api.artifacts.dsl.DependencyHandler;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
@@ -31,21 +29,14 @@ public class FrameworkDetectorTest {
     @Mock
     private Configuration testConfiguration;
     @Mock
-    private DependencyHandler dependencyHandler;
-    @Mock
     private DependencySet dependencySet;
-
-    @BeforeEach
-    void setUp() {
-        when(project.getConfigurations()).thenReturn(configurations);
-        when(configurations.stream()).thenReturn(Collections.singletonList(testConfiguration).stream());
-        when(testConfiguration.getName()).thenReturn("testImplementation");
-        when(project.getDependencies()).thenReturn(dependencyHandler);
-        when(testConfiguration.getAllDependencies()).thenReturn(dependencySet);
-    }
 
     @Test
     void testDetectJUnit5() {
+        when(project.getConfigurations()).thenReturn(configurations);
+        when(configurations.stream()).thenReturn(Collections.singletonList(testConfiguration).stream());
+        when(testConfiguration.getName()).thenReturn("testImplementation");
+        when(testConfiguration.getAllDependencies()).thenReturn(dependencySet);
         Dependency jupiterDep = mock(Dependency.class);
         when(jupiterDep.getGroup()).thenReturn("org.junit.jupiter");
         when(dependencySet.stream()).thenReturn(Stream.of(jupiterDep));
@@ -56,6 +47,10 @@ public class FrameworkDetectorTest {
 
     @Test
     void testDetectSpock() {
+        when(project.getConfigurations()).thenReturn(configurations);
+        when(configurations.stream()).thenReturn(Collections.singletonList(testConfiguration).stream());
+        when(testConfiguration.getName()).thenReturn("testImplementation");
+        when(testConfiguration.getAllDependencies()).thenReturn(dependencySet);
         Dependency spockDep = mock(Dependency.class);
         when(spockDep.getGroup()).thenReturn("org.spockframework");
         when(dependencySet.stream()).thenReturn(Stream.of(spockDep));
@@ -67,10 +62,11 @@ public class FrameworkDetectorTest {
     @Test
     void testGetAdapters() {
         List<TestFrameworkAdapter> adapters = FrameworkDetector.getAdapters();
-        assertEquals(4, adapters.size());
+        assertEquals(5, adapters.size());
         assertTrue(adapters.stream().anyMatch(a -> a instanceof JUnit4Adapter));
         assertTrue(adapters.stream().anyMatch(a -> a instanceof JUnit5Adapter));
         assertTrue(adapters.stream().anyMatch(a -> a instanceof TestNGAdapter));
         assertTrue(adapters.stream().anyMatch(a -> a instanceof SpockAdapter));
+        assertTrue(adapters.stream().anyMatch(a -> a instanceof CucumberAdapter));
     }
 }

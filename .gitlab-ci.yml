@@ -1,0 +1,13 @@
+image: gradle:jdk17
+
+stages:
+  - test
+
+test:
+  stage: test
+  script:
+    - ./gradlew test
+  artifacts:
+    paths:
+      - build/unifiedtest/reports/
+    when: always

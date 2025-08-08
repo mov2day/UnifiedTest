@@ -17,7 +17,8 @@ public class FrameworkDetector {
             new JUnit4Adapter(),
             new JUnit5Adapter(),
             new TestNGAdapter(),
-            new SpockAdapter()
+            new SpockAdapter(),
+            new CucumberAdapter()
     );
 
     /**
@@ -42,6 +43,8 @@ public class FrameworkDetector {
                         frameworks.add("TestNG");
                     } else if (group.equals("org.spockframework")) {
                         frameworks.add("Spock");
+                    } else if (group.equals("io.cucumber")) {
+                        frameworks.add("Cucumber");
                     }
                 });
         return frameworks;

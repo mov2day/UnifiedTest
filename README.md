@@ -1,9 +1,9 @@
 # UnifiedTest Agent
 
-UnifiedTest is a Java-based Gradle plugin for advanced test automation observability and reporting. It supports JUnit4, JUnit5, and TestNG. Spock and Cucumber are not included in this version.
+UnifiedTest is a Java-based Gradle plugin for advanced test automation observability and reporting. It supports JUnit4, JUnit5, TestNG, Spock, and Cucumber.
 
 ## Features
-- Dynamic detection of supported test frameworks (JUnit4, JUnit5, TestNG)
+- Dynamic detection of supported test frameworks (JUnit4, JUnit5, TestNG, Spock, Cucumber)
 - Pretty console output
 - JSON and HTML reporting
 - OpenTelemetry export (placeholder)
@@ -32,7 +32,7 @@ Implement the `UnifiedTestExtension` interface and register your implementation 
 
 # 🔍 UnifiedTest
 
-**UnifiedTest** is a versatile **Java-based Gradle plugin** for advanced test automation observability and reporting. It supports **JUnit**, **TestNG**, and more—offering beautiful console reporting, JSON/HTML reports, and OpenTelemetry trace export.
+**UnifiedTest** is a versatile **Java-based Gradle plugin** for advanced test automation observability and reporting. It supports **JUnit**, **TestNG**, **Spock**, **Cucumber**, and more—offering beautiful console reporting, JSON/HTML reports, and OpenTelemetry trace export.
 
 > 📦 Publish once, run across all frameworks!
 
@@ -40,7 +40,7 @@ Implement the `UnifiedTestExtension` interface and register your implementation 
 
 ## 🚀 Features
 
-- 🔧 **Support for Multiple Frameworks**: JUnit4, JUnit5, TestNG (Spock, Cucumber in progress)
+- 🔧 **Support for Multiple Frameworks**: JUnit4, JUnit5, TestNG, Spock, Cucumber
 - 🎯 **Dynamic Detection**: Auto-identifies framework at runtime or via config
 - 🖥️ **Pretty Console Output**: Live updates of test execution, duration, and result summary
 - 📊 **Reports**: Generate structured `JSON` and visual `HTML` reports
@@ -72,7 +72,7 @@ plugins {
 
 ```kotlin
 unifiedTest {
-    framework = "auto" // or "junit", "testng"
+    framework = "auto" // or "junit", "testng", "spock", "cucumber"
     
     telemetry {
         enabled = true
@@ -204,8 +204,8 @@ UnifiedTest optimizes test result submission by batching results and sending the
 | JUnit 4  | ✅ Full   | `RunListener`             |
 | JUnit 5  | ✅ Full   | `TestExecutionListener`   |
 | TestNG   | ✅ Full   | `ITestListener`           |
-| Spock    | 🚧 In Dev | Groovy extensions         |
-| Cucumber | 🚧 Planned| Formatter/Reporter APIs   |
+| Spock    | ✅ Full   | `IGlobalExtension`        |
+| Cucumber | ✅ Full   | `Plugin` API              |
 
 ---
 
@@ -261,6 +261,29 @@ public class MyTest {
     }
     ```
 
+### Spock
+- UnifiedTest automatically discovers and registers the necessary listeners for Spock.
+- No additional configuration is required.
+
+### Cucumber
+- UnifiedTest automatically discovers and registers the necessary listeners for Cucumber.
+- To enable reporting, you need to specify the UnifiedTest Cucumber plugin in your test runner or `cucumber.properties` file.
+- **Example using `@CucumberOptions` in a JUnit runner:**
+  ```java
+  import io.cucumber.junit.Cucumber;
+  import io.cucumber.junit.CucumberOptions;
+  import org.junit.runner.RunWith;
+
+  @RunWith(Cucumber.class)
+  @CucumberOptions(plugin = {"io.github.mov2day.unifiedtest.framework.cucumber.CucumberReporter"})
+  public class CucumberTest {
+  }
+  ```
+- **Example using `cucumber.properties`:**
+  ```properties
+  cucumber.plugin=io.github.mov2day.unifiedtest.framework.cucumber.CucumberReporter
+  ```
+
 ---
 
 ## 🧠 How It Works
@@ -268,9 +291,9 @@ public class MyTest {
 ### 🔄 Dynamic Detection
 
 UnifiedTest auto-detects frameworks by scanning classpath signatures and test task setup. It uses:
-- Class presence checks (e.g., `org.junit.jupiter.api.Test`)
+- Class presence checks (e.g., `org.junit.jupiter.api.Test`, `org.spockframework.runtime.SpockRuntime`)
 - Runtime analysis
-- Optional manual override via `unifiedTest.framework = "junit"`
+- Optional manual override via `unifiedTest.framework = "spock"`
 
 ### 🧩 Framework Adapters
 
@@ -283,7 +306,7 @@ public interface TestFrameworkAdapter {
 }
 ```
 
-They hook into native listeners (e.g., `RunListener`, `ITestListener`) and stream execution data to a shared bus.
+They hook into native listeners (e.g., `RunListener`, `ITestListener`, `IGlobalExtension`) and stream execution data to a shared bus.
 
 ---
 
@@ -396,7 +419,7 @@ Domain name based on GitHub username: `com.github.mov2day`
 - [x] HTML/JSON reports
 - [x] OpenTelemetry export
 - [x] Dynamic framework detection
-- [ ] Spock & Cucumber support
+- [x] Spock & Cucumber support
 - [ ] Retry analyzer & flaky test tracking
 - [ ] VS Code Integration
 - [ ] GitLab + Azure CI Templates
