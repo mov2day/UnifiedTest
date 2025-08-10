@@ -1,4 +1,5 @@
 plugins {
+    id 'groovy'
     id 'java-gradle-plugin'
     id 'com.gradle.plugin-publish' version '1.2.1'
     id 'signing'
@@ -7,7 +8,7 @@ plugins {
 }
 
 group = 'io.github.mov2day'
-version = '0.3.9'
+version = '0.3.10'
 
 java {
     sourceCompatibility = JavaVersion.VERSION_17
@@ -143,12 +144,20 @@ configurations {
 dependencies {
     implementation gradleApi()
     implementation localGroovy()
+    compileOnly 'org.spockframework:spock-core:2.3-groovy-3.0'
+    compileOnly 'org.codehaus.groovy:groovy-all:3.0.22'
+    compileOnly 'io.cucumber:cucumber-java:7.11.1'
+    compileOnly 'io.cucumber:cucumber-junit:7.11.1'
     implementation 'org.junit.jupiter:junit-jupiter-api:5.10.2'
     implementation 'org.junit.platform:junit-platform-launcher:1.10.2'
     implementation 'junit:junit:4.13.2'
     implementation 'org.testng:testng:7.10.2'
     implementation 'javax.inject:javax.inject:1'
     implementation 'com.google.code.gson:gson:2.10.1'
+    testImplementation 'org.spockframework:spock-core:2.3-groovy-3.0'
+    testImplementation 'org.codehaus.groovy:groovy-all:3.0.22'
+    testImplementation 'io.cucumber:cucumber-java:7.11.1'
+    testImplementation 'io.cucumber:cucumber-junit:7.11.1'
     testImplementation 'org.junit.jupiter:junit-jupiter:5.10.2'
     testImplementation 'org.mockito:mockito-core:5.10.0'
     testImplementation 'org.mockito:mockito-junit-jupiter:5.10.0'
