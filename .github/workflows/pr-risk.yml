@@ -1,0 +1,19 @@
+name: PR Test Risk Profiler
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+jobs:
+  risk-analysis:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Run PR Test Risk Profiler
+        uses: mov2day/pr-test-risk-profiler@v1.0
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
