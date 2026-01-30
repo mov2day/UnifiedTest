@@ -19,24 +19,18 @@ public class JUnit4Adapter implements TestFrameworkAdapter {
     }
     
     @Override
-    public void registerListeners(Project project, Test testTask, UnifiedTestResultCollector collector, ConsoleReporter reporter) {
+    public void registerListeners(Project project, Test testTask, UnifiedTestResultCollector collector, ConsoleReporter reporter, String theme) {
         testTask.useJUnit();
         // Set the collector and reporter for the JUnit 4 listener
         UnifiedJUnit4Listener.setCollectorAndReporter(collector, reporter);
         // Register the JUnit 4 listener using system property
         System.setProperty("junit.listeners", UnifiedJUnit4Listener.class.getName());
-        // Add the pretty console listener
-        testTask.addTestListener(new PrettyConsoleTestListener(project, getThemeFromConfig(project), collector));
+        // Add the pretty console listener using the configuration-time theme
+        testTask.addTestListener(new PrettyConsoleTestListener(project, theme, collector));
     }
     
     @Override
     public String getName() { return "JUnit4"; }
 
-    private String getThemeFromConfig(Project project) {
-        try {
-            return project.getExtensions().getByType(UnifiedTestAgentPlugin.UnifiedTestExtensionConfig.class).getTheme().get();
-        } catch (Exception e) {
-            return "standard"; // Default fallback
-        }
-    }
+    // theme is now passed in at configuration time; no runtime extension access
 }

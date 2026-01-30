@@ -20,11 +20,12 @@ public interface TestFrameworkAdapter {
     /**
      * Registers test listeners for the framework with the given project and test task.
      * @param project the Gradle project
-     * @param testTask the test task to configure
+        * @param testTask the test task to configure
      * @param collector collector for test results
-     * @param reporter reporter for console output
+        * @param reporter reporter for console output
+        * @param theme the resolved theme (captured at configuration time)
      */
-    void registerListeners(Project project, Test testTask, UnifiedTestResultCollector collector, ConsoleReporter reporter);
+        void registerListeners(Project project, Test testTask, UnifiedTestResultCollector collector, ConsoleReporter reporter, String theme);
 
     /**
      * Gets the name of the test framework this adapter supports.

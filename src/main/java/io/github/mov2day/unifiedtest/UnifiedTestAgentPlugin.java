@@ -103,26 +103,8 @@ public class UnifiedTestAgentPlugin implements Plugin<Project> {
             new TestNGAdapter()
         );
 
-        // 1. Register report tasks for all test tasks
-        project.getTasks().withType(Test.class).all(testTask -> {
-            String reportTaskName = testTask.getName() + "UnifiedTestReport";
-            project.getTasks().register(reportTaskName, t -> {
-                t.doLast(task -> {
-                    // Retrieve the collector from the test task's extensions
-                    UnifiedTestResultCollector collector = (UnifiedTestResultCollector) testTask.getExtensions().findByName("unifiedTestCollector");
-                    if (config.getJsonEnabled().get()) {
-                        File reportsDir = new File(project.getBuildDir(), "unifiedtest/reports");
-                        reportsDir.mkdirs();
-                        JsonReportGenerator.generate(project, testTask, collector);
-                    }
-                    if (config.getHtmlEnabled().get()) {
-                        File reportsDir = new File(project.getBuildDir(), "unifiedtest/reports");
-                        reportsDir.mkdirs();
-                        HtmlReportGenerator.generate(project, testTask, collector);
-                    }
-                });
-            });
-        });
+        // Report generation: avoid accessing other task's extensions at execution time.
+        // Instead generate reports as part of each Test task's doLast (collector is available there).
 
         // 2. Configure each test task
         project.getTasks().withType(Test.class).configureEach(testTask -> {
@@ -159,7 +141,9 @@ public class UnifiedTestAgentPlugin implements Plugin<Project> {
                 }
 
                 if (selected != null) {
-                    selected.registerListeners(project, testTask, collector, reporter);
+                    // Pass the resolved theme (captured at configuration time) to avoid runtime extension lookup
+                    String theme = config.getTheme().get();
+                    selected.registerListeners(project, testTask, collector, reporter, theme);
                     project.getLogger().lifecycle("UnifiedTest using framework: " + selected.getName());
                 } else {
                     project.getLogger().warn("UnifiedTest: No supported test framework detected or configured. Falling back to default Gradle Test listeners.");
@@ -176,7 +160,7 @@ public class UnifiedTestAgentPlugin implements Plugin<Project> {
                 }
             });
 
-            // Push results to test management systems after test execution
+            // Push results to test management systems after test execution and generate reports here
             testTask.doLast(task -> {
                 for (TestManagementSystem system : testManagementFactory.getAllSystems()) {
                     if (system.isConfigured()) {
@@ -190,11 +174,19 @@ public class UnifiedTestAgentPlugin implements Plugin<Project> {
                         }
                     }
                 }
-            });
 
-            // Ensure report generation runs even if tests fail
-            String reportTaskName = testTask.getName() + "UnifiedTestReport";
-            testTask.finalizedBy(reportTaskName);
+                // Generate reports directly using the collector available here (execution of this task)
+                if (config.getJsonEnabled().get()) {
+                    File reportsDir = new File(project.getBuildDir(), "unifiedtest/reports");
+                    reportsDir.mkdirs();
+                    JsonReportGenerator.generate(project, testTask, collector);
+                }
+                if (config.getHtmlEnabled().get()) {
+                    File reportsDir = new File(project.getBuildDir(), "unifiedtest/reports");
+                    reportsDir.mkdirs();
+                    HtmlReportGenerator.generate(project, testTask, collector);
+                }
+            });
         });
     }
 }
