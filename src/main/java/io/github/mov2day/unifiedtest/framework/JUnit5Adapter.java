@@ -20,21 +20,21 @@ public class JUnit5Adapter implements TestFrameworkAdapter {
     }
 
     @Override
-    public void registerListeners(Project project, Test testTask, UnifiedTestResultCollector collector, ConsoleReporter reporter) {
+    public void registerListeners(Project project, Test testTask, UnifiedTestResultCollector collector, ConsoleReporter reporter, String theme) {
         testTask.useJUnitPlatform();
-        
+
         // Set the collector and reporter for the JUnit 5 listener
         UnifiedJUnit5Listener.setCollectorAndReporter(collector, reporter);
-        
+
         // For gradle test task, explicitly add a property to mark it as Gradle
         testTask.systemProperty("unifiedtest.environment", "gradle");
-        
+
         // Register the JUnit 5 listener using system property
         System.setProperty("junit.jupiter.extensions.autodetection.enabled", "true");
-        
-        // Add the pretty console listener
-        testTask.addTestListener(new PrettyConsoleTestListener(project, getThemeFromConfig(project), collector));
-        
+
+        // Add the pretty console listener using the configuration-time theme
+        testTask.addTestListener(new PrettyConsoleTestListener(project, theme, collector));
+
         // Log that Gradle adapter is being used
         project.getLogger().lifecycle("UnifiedTest: Gradle adapter for JUnit 5 registered");
     }
@@ -42,11 +42,5 @@ public class JUnit5Adapter implements TestFrameworkAdapter {
     @Override
     public String getName() { return "JUnit5"; }
     
-    private String getThemeFromConfig(Project project) {
-        try {
-            return project.getExtensions().getByType(UnifiedTestAgentPlugin.UnifiedTestExtensionConfig.class).getTheme().get();
-        } catch (Exception e) {
-            return "standard"; // Default fallback
-        }
-    }
+    // theme is now passed in at configuration time; no runtime extension access
 }

@@ -19,22 +19,16 @@ public class TestNGAdapter implements TestFrameworkAdapter {
     }
     
     @Override
-    public void registerListeners(Project project, Test testTask, UnifiedTestResultCollector collector, ConsoleReporter reporter) {
+    public void registerListeners(Project project, Test testTask, UnifiedTestResultCollector collector, ConsoleReporter reporter, String theme) {
         testTask.useTestNG();
         // Set the collector and reporter for the TestNG listener
         UnifiedTestNGListener.setCollectorAndReporter(collector, reporter);
-        // Add the pretty console listener
-        testTask.addTestListener(new PrettyConsoleTestListener(project, getThemeFromConfig(project), collector));
+        // Add the pretty console listener using the configuration-time theme
+        testTask.addTestListener(new PrettyConsoleTestListener(project, theme, collector));
     }
     
     @Override
     public String getName() { return "TestNG"; }
 
-    private String getThemeFromConfig(Project project) {
-        try {
-            return project.getExtensions().getByType(UnifiedTestAgentPlugin.UnifiedTestExtensionConfig.class).getTheme().get();
-        } catch (Exception e) {
-            return "standard"; // Default fallback
-        }
-    }
+    // theme is now passed in at configuration time; no runtime extension access
 }

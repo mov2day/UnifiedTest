@@ -149,7 +149,7 @@ public class PrettyConsoleTestListener implements TestListener {
             String formattedTime = formatDuration(totalTimeMillis);
             String summary = String.format("\n%sUnifiedTest Summary%s\n" +
                 "%s Passed: %-4d %s Failed: %-4d %s Skipped: %-4d\n" +
-                "Total Tests: %-4d Time: %s\n" +
+                "%sTotal Tests: %-4d Time: %s%s\n" +
                 "Status Distribution: PASS: %5.1f%% (%d)  FAIL: %5.1f%% (%d)  SKIP: %5.1f%% (%d)\n" +
                 "==============================================\n",
                 BOLD, RESET,
