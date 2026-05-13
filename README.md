@@ -6,7 +6,7 @@ UnifiedTest is a Java-based Gradle plugin for advanced test automation observabi
 - Dynamic detection of supported test frameworks (JUnit4, JUnit5, TestNG)
 - Pretty console output
 - JSON and HTML reporting
-- OpenTelemetry export (placeholder)
+- OpenTelemetry export to OTLP endpoints
 - Extensible via SPI (Service Provider Interface)
 
 ## Getting Started
@@ -40,11 +40,11 @@ Implement the `UnifiedTestExtension` interface and register your implementation 
 
 ## 🚀 Features
 
-- 🔧 **Support for Multiple Frameworks**: JUnit4, JUnit5, TestNG (Spock, Cucumber in progress)
+- 🔧 **Support for Multiple Frameworks**: JUnit4, JUnit5, TestNG, Spock, and Cucumber
 - 🎯 **Dynamic Detection**: Auto-identifies framework at runtime or via config
 - 🖥️ **Pretty Console Output**: Live updates of test execution, duration, and result summary
 - 📊 **Reports**: Generate structured `JSON` and visual `HTML` reports
-- 📡 **OpenTelemetry Export**: Send test traces to Tempo, Jaeger, Zipkin, etc.
+- 📡 **OpenTelemetry Export**: Send per-test traces to OpenTelemetry Collector, Tempo, Jaeger, Zipkin, etc.
 - 🧩 **Extensible via SPI**: Add your own renderers, listeners, or exporters
 - ⚙️ **CI/CD Ready**: Integrates smoothly with GitHub Actions, GitLab, etc.
 
@@ -55,14 +55,14 @@ Implement the `UnifiedTestExtension` interface and register your implementation 
 ### 🛠 Gradle (Kotlin DSL)
 ```kotlin
 plugins {
-    id("com.github.mov2day.unifiedtest") version "1.0.0"
+    id("io.github.mov2day.unifiedtest") version "0.3.12"
 }
 ```
 
 ### 🛠 Gradle (Groovy DSL)
 ```groovy
 plugins {
-    id 'com.github.mov2day.unifiedtest' version '1.0.0'
+    id 'io.github.mov2day.unifiedtest' version '0.3.12'
 }
 ```
 
@@ -72,19 +72,18 @@ plugins {
 
 ```kotlin
 unifiedTest {
-    framework = "auto" // or "junit", "testng"
+    framework = "" // auto-detect, or "junit5", "junit4", "testng", "spock", "cucumber"
     
     telemetry {
         enabled = true
         endpoint = "http://localhost:4317"
         serviceName = "unified-test"
-    }
-    
-    reports {
-        jsonEnabled = true
-        htmlEnabled = true
+        traceBaseUrl = "http://localhost:3000/explore?traceId={traceId}"
     }
 
+    jsonEnabled = true
+    htmlEnabled = true
+    dashboardEnabled = true
     theme = "mocha" // "standard", "minimal", "mocha"
 }
 ```
@@ -322,13 +321,16 @@ Enable trace export to observability tools with a config switch:
 unifiedTest.telemetry {
     enabled = true
     endpoint = "http://localhost:4317"
+    serviceName = "checkout-service"
+    traceBaseUrl = "http://localhost:3000/explore?traceId={traceId}"
 }
 ```
 
 ### Exports Include:
-- Test name, duration, outcome
-- Framework, suite metadata
-- Exception info and thread details
+- One span per test with framework, class, method, status, duration, failure message, and run id
+- One run summary span with total, passed, failed, skipped, and flaky count
+- Optional trace links in the HTML report when `traceBaseUrl` is configured
+- Fail-soft behavior: telemetry errors log warnings and do not fail the test task
 
 ---
 
@@ -336,10 +338,11 @@ unifiedTest.telemetry {
 
 | Format | Output Path                          |
 |--------|--------------------------------------|
-| JSON   | `build/unifiedTest/reports/results.json` |
-| HTML   | `build/unifiedTest/reports/index.html`  |
+| JSON   | `build/unifiedtest/reports/results.json` |
+| HTML   | `build/unifiedtest/reports/index.html`  |
+| Grafana dashboard | `build/unifiedtest/dashboard/grafana-dashboard.json` |
 
-HTML reports offer collapsible suites, duration tracking, and color-coded result sections.
+HTML reports include search, status/framework filters, duration sorting, failure details, service/run metadata, and optional trace links.
 
 ---
 
@@ -353,7 +356,7 @@ HTML reports offer collapsible suites, duration tracking, and color-coded result
 - uses: actions/upload-artifact@v3
   with:
     name: reports
-    path: build/unifiedTest/reports/
+    path: build/unifiedtest/reports/
 ```
 
 ---
@@ -384,10 +387,10 @@ public interface TestFrameworkAdapter {
 
 | Registry              | ID                                  |
 |-----------------------|--------------------------------------|
-| Maven Central         | `com.github.mov2day:unifiedtest`     |
-| Gradle Plugin Portal  | `com.github.mov2day.unifiedtest`     |
+| Maven Central         | `io.github.mov2day:unifiedtest`     |
+| Gradle Plugin Portal  | `io.github.mov2day.unifiedtest`     |
 
-Domain name based on GitHub username: `com.github.mov2day`
+Domain name based on GitHub username: `io.github.mov2day`
 
 ---
 
@@ -396,7 +399,9 @@ Domain name based on GitHub username: `com.github.mov2day`
 - [x] HTML/JSON reports
 - [x] OpenTelemetry export
 - [x] Dynamic framework detection
-- [ ] Spock & Cucumber support
+- [x] Grafana dashboard JSON
+- [x] Spock & Cucumber detection via JUnit Platform
+- [ ] Dedicated Spock/Cucumber edge-case coverage beyond smoke projects
 - [ ] Retry analyzer & flaky test tracking
 - [ ] VS Code Integration
 - [ ] GitLab + Azure CI Templates
@@ -460,7 +465,7 @@ UnifiedTest now works with Maven projects! Follow these steps to set up UnifiedT
 <dependency>
     <groupId>io.github.mov2day</groupId>
     <artifactId>unifiedtest</artifactId>
-    <version>0.3.9</version>
+    <version>0.3.12</version>
     <scope>test</scope>
 </dependency>
 ```

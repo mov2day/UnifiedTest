@@ -21,6 +21,7 @@ public class UnifiedTestResultCollector implements TestListener, ITestResultColl
     private final List<io.github.mov2day.unifiedtest.collector.UnifiedTestResult> results = new ArrayList<>();
     private final Map<String, io.github.mov2day.unifiedtest.collector.UnifiedTestResult> resultMap = new ConcurrentHashMap<>();
     private Consumer<UnifiedTestResult> resultCallback;
+    private String frameworkName = "unknown";
 
     /**
      * Default constructor required for ServiceLoader.
@@ -70,14 +71,7 @@ public class UnifiedTestResultCollector implements TestListener, ITestResultColl
             duration
         );
 
-        String key = testDescriptor.getClassName() + "." + testDescriptor.getName();
-        resultMap.put(key, testResult);
-        results.add(testResult);
-
-        // Notify callback if set
-        if (resultCallback != null) {
-            resultCallback.accept(convertToReportingResult(testResult));
-        }
+        addResult(testResult);
     }
 
     /**
@@ -89,10 +83,29 @@ public class UnifiedTestResultCollector implements TestListener, ITestResultColl
     }
 
     /**
+     * Sets the framework name attached to results that do not already provide one.
+     * @param frameworkName the selected test framework name
+     */
+    public void setFrameworkName(String frameworkName) {
+        if (frameworkName != null && !frameworkName.isBlank()) {
+            this.frameworkName = frameworkName;
+        }
+    }
+
+    /**
+     * Gets the framework name currently associated with this collector.
+     * @return selected framework name or unknown
+     */
+    public String getFrameworkName() {
+        return frameworkName;
+    }
+
+    /**
      * Adds a test result to the collection.
      * @param result the test result to add
      */
     public void addResult(io.github.mov2day.unifiedtest.collector.UnifiedTestResult result) {
+        result = result.withFramework(frameworkName);
         String key = result.className + "." + result.testName;
         if (!resultMap.containsKey(key)) {
             resultMap.put(key, result);
@@ -132,9 +145,10 @@ public class UnifiedTestResultCollector implements TestListener, ITestResultColl
         String name = result.className + "." + result.testName;
         Instant startTime = Instant.ofEpochMilli(System.currentTimeMillis() - result.duration);
         Instant endTime = Instant.ofEpochMilli(System.currentTimeMillis());
+        UnifiedTestResult reportingResult;
         
         if (result.failureMessage != null || result.stackTrace != null) {
-            return new UnifiedTestResult(
+            reportingResult = new UnifiedTestResult(
                 name, 
                 result.status, 
                 startTime, 
@@ -143,12 +157,14 @@ public class UnifiedTestResultCollector implements TestListener, ITestResultColl
                 result.stackTrace
             );
         } else {
-            return new UnifiedTestResult(
+            reportingResult = new UnifiedTestResult(
                 name, 
                 result.status, 
                 startTime, 
                 endTime
             );
         }
+        reportingResult.addMetadata("framework", result.framework);
+        return reportingResult;
     }
 }

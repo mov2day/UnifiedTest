@@ -259,9 +259,20 @@ public class UnifiedJUnit5Listener implements TestExecutionListener {
         try {
             // Extract class name from uniqueId which is in format: [engine:junit-jupiter]/[class:ClassName]/[method:methodName]
             // or for parameterized tests: [engine:junit-jupiter]/[class:ClassName]/[test-template:methodName]/[test-template-invocation:n]
-            int classStart = uniqueId.indexOf("[class:") + 7;
-            int classEnd = uniqueId.indexOf("]", classStart);
-            return uniqueId.substring(classStart, classEnd);
+            String className = extractSegment(uniqueId, "class");
+            if (className != null) {
+                return className;
+            }
+            String specName = extractSegment(uniqueId, "spec");
+            if (specName != null) {
+                return specName;
+            }
+            String featureName = extractSegment(uniqueId, "feature");
+            if (featureName != null) {
+                return featureName;
+            }
+            String engineName = extractSegment(uniqueId, "engine");
+            return engineName != null ? engineName : testIdentifier.getDisplayName();
         } catch (IndexOutOfBoundsException e) {
             // Fallback to display name if ID parsing fails
             System.out.println("UnifiedTest: Warning - Failed to parse class name from: " + uniqueId);
@@ -300,9 +311,16 @@ public class UnifiedJUnit5Listener implements TestExecutionListener {
             }
             
             // Regular test methods
-            int methodStart = uniqueId.indexOf("[method:") + 8;
-            int methodEnd = uniqueId.indexOf("]", methodStart);
-            String methodName = uniqueId.substring(methodStart, methodEnd);
+            String methodName = extractSegment(uniqueId, "method");
+            if (methodName == null) {
+                methodName = extractSegment(uniqueId, "feature");
+            }
+            if (methodName == null) {
+                methodName = extractSegment(uniqueId, "scenario");
+            }
+            if (methodName == null) {
+                methodName = displayName;
+            }
             
             // For dynamic tests, add the display name
             if (uniqueId.contains("[dynamic-test:")) {
@@ -320,5 +338,19 @@ public class UnifiedJUnit5Listener implements TestExecutionListener {
     private long getDurationAndRemove(TestIdentifier testIdentifier) {
         Long startTime = startTimes.remove(testIdentifier);
         return startTime != null ? System.currentTimeMillis() - startTime : 0;
+    }
+
+    private String extractSegment(String uniqueId, String segmentName) {
+        String marker = "[" + segmentName + ":";
+        int start = uniqueId.indexOf(marker);
+        if (start < 0) {
+            return null;
+        }
+        int valueStart = start + marker.length();
+        int end = uniqueId.indexOf("]", valueStart);
+        if (end < 0) {
+            return null;
+        }
+        return uniqueId.substring(valueStart, end);
     }
 }

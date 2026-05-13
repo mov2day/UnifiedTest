@@ -3,8 +3,9 @@ package io.github.mov2day.unifiedtest.framework;
 import org.gradle.api.Project;
 import org.gradle.api.artifacts.Configuration;
 
-import java.util.ArrayList;
 import java.util.List;
+import java.util.LinkedHashSet;
+import java.util.Set;
 
 /**
  * Utility class for detecting test frameworks in a Gradle project.
@@ -17,10 +18,14 @@ public class FrameworkDetector {
      * @return list of detected test framework names
      */
     public static List<String> detect(Project project) {
-        List<String> frameworks = new ArrayList<>();
-        Configuration testImplementation = project.getConfigurations().findByName("testImplementation");
-        if (testImplementation != null) {
-            testImplementation.getAllDependencies().forEach(dep -> {
+        Set<String> frameworks = new LinkedHashSet<>();
+        List<String> configurationNames = List.of("testImplementation", "testRuntimeOnly", "testCompileOnly", "implementation");
+        for (String configurationName : configurationNames) {
+            Configuration configuration = project.getConfigurations().findByName(configurationName);
+            if (configuration == null) {
+                continue;
+            }
+            configuration.getAllDependencies().forEach(dep -> {
                 String group = dep.getGroup() != null ? dep.getGroup() : "";
                 String name = dep.getName() != null ? dep.getName() : "";
                 if (group.equals("junit") && name.equals("junit")) {
@@ -29,9 +34,13 @@ public class FrameworkDetector {
                     frameworks.add("JUnit5");
                 } else if (group.equals("org.testng")) {
                     frameworks.add("TestNG");
+                } else if (group.equals("org.spockframework") || name.startsWith("spock-")) {
+                    frameworks.add("Spock");
+                } else if (group.equals("io.cucumber") || name.startsWith("cucumber-")) {
+                    frameworks.add("Cucumber");
                 }
             });
         }
-        return frameworks;
+        return List.copyOf(frameworks);
     }
 }

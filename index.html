@@ -25,7 +25,7 @@
     <li>Dynamic detection of supported test frameworks (JUnit4, JUnit5, TestNG)</li>
     <li>Pretty console output</li>
     <li>JSON and HTML reporting</li>
-    <li>OpenTelemetry export (placeholder)</li>
+    <li>OpenTelemetry export to OTLP endpoints</li>
     <li>Extensible via SPI (Service Provider Interface)</li>
   </ul>
 
@@ -60,11 +60,11 @@
 
   <h2>🚀 Features</h2>
   <ul>
-    <li>🔧 <strong>Support for Multiple Frameworks</strong>: JUnit4, JUnit5, TestNG (Spock, Cucumber in progress)</li>
+    <li>🔧 <strong>Support for Multiple Frameworks</strong>: JUnit4, JUnit5, TestNG, Spock, and Cucumber</li>
     <li>🎯 <strong>Dynamic Detection</strong>: Auto-identifies framework at runtime or via config</li>
     <li>🖥️ <strong>Pretty Console Output</strong>: Live updates of test execution, duration, and result summary</li>
     <li>📊 <strong>Reports</strong>: Generate structured <code>JSON</code> and visual <code>HTML</code> reports</li>
-    <li>📡 <strong>OpenTelemetry Export</strong>: Send test traces to Tempo, Jaeger, Zipkin, etc.</li>
+    <li>📡 <strong>OpenTelemetry Export</strong>: Send per-test traces to OpenTelemetry Collector, Tempo, Jaeger, Zipkin, etc.</li>
     <li>🧩 <strong>Extensible via SPI</strong>: Add your own renderers, listeners, or exporters</li>
     <li>⚙️ <strong>CI/CD Ready</strong>: Integrates smoothly with GitHub Actions, GitLab, etc.</li>
   </ul>
@@ -72,11 +72,11 @@
   <h2>🔧 Installation</h2>
   <h3>🛠 Gradle (Kotlin DSL)</h3>
   <pre><code>plugins {
-    id("com.github.mov2day.unifiedtest") version "1.0.0"
+    id("io.github.mov2day.unifiedtest") version "0.3.12"
 }</code></pre>
   <h3>🛠 Gradle (Groovy DSL)</h3>
   <pre><code>plugins {
-    id 'com.github.mov2day.unifiedtest' version '1.0.0'
+    id 'io.github.mov2day.unifiedtest' version '0.3.12'
 }</code></pre>
 
   <h2>⚙️ Configuration</h2>
@@ -159,8 +159,8 @@ Summary:
   <h2>📁 Report Generation</h2>
   <table>
     <tr><th>Format</th><th>Output Path</th></tr>
-    <tr><td>JSON</td><td><code>build/unifiedTest/reports/results.json</code></td></tr>
-    <tr><td>HTML</td><td><code>build/unifiedTest/reports/index.html</code></td></tr>
+    <tr><td>JSON</td><td><code>build/unifiedtest/reports/results.json</code></td></tr>
+    <tr><td>HTML</td><td><code>build/unifiedtest/reports/index.html</code></td></tr>
   </table>
   <p>HTML reports offer collapsible suites, duration tracking, and color-coded result sections.</p>
 
@@ -172,7 +172,7 @@ Summary:
 - uses: actions/upload-artifact@v3
   with:
     name: reports
-    path: build/unifiedTest/reports/
+    path: build/unifiedtest/reports/
 </code></pre>
 
   <h2>🧪 Architecture Diagram</h2>
@@ -192,17 +192,19 @@ Summary:
   <h2>📦 Publishing & Distribution</h2>
   <table>
     <tr><th>Registry</th><th>ID</th></tr>
-    <tr><td>Maven Central</td><td><code>com.github.mov2day:unifiedtest</code></td></tr>
-    <tr><td>Gradle Plugin Portal</td><td><code>com.github.mov2day.unifiedtest</code></td></tr>
+    <tr><td>Maven Central</td><td><code>io.github.mov2day:unifiedtest</code></td></tr>
+    <tr><td>Gradle Plugin Portal</td><td><code>io.github.mov2day.unifiedtest</code></td></tr>
   </table>
-  <p>Domain name based on GitHub username: <code>com.github.mov2day</code></p>
+  <p>Domain name based on GitHub username: <code>io.github.mov2day</code></p>
 
   <h2>🛣 Roadmap</h2>
   <ul>
     <li>[x] HTML/JSON reports</li>
     <li>[x] OpenTelemetry export</li>
     <li>[x] Dynamic framework detection</li>
-    <li>[ ] Spock &amp; Cucumber support</li>
+    <li>[x] Grafana dashboard JSON</li>
+    <li>[x] Spock &amp; Cucumber detection via JUnit Platform</li>
+    <li>[ ] Dedicated Spock/Cucumber edge-case coverage beyond smoke projects</li>
     <li>[ ] Retry analyzer &amp; flaky test tracking</li>
     <li>[ ] VS Code Integration</li>
     <li>[ ] GitLab + Azure CI Templates</li>

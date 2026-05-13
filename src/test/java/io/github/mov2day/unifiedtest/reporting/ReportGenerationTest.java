@@ -9,9 +9,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 import java.io.File;
-import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Arrays;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -19,10 +17,12 @@ class ReportGenerationTest {
     private Project project;
     private org.gradle.api.tasks.testing.Test testTask;
     private UnifiedTestResultCollector collector;
+    @TempDir
+    Path tempDir;
     
     @BeforeEach
     void setUp() {
-        project = ProjectBuilder.builder().build();
+        project = ProjectBuilder.builder().withProjectDir(tempDir.toFile()).build();
         testTask = project.getTasks().create("test", org.gradle.api.tasks.testing.Test.class);
         collector = new UnifiedTestResultCollector();
         
@@ -61,7 +61,7 @@ class ReportGenerationTest {
         HtmlReportGenerator.generate(project, testTask, collector);
         
         // Verify the report file exists
-        File reportFile = new File(project.getBuildDir(), "unifiedtest/reports/index.html");
+        File reportFile = project.getLayout().getBuildDirectory().file("unifiedtest/reports/index.html").get().getAsFile();
         assertTrue(reportFile.exists(), "HTML report should be generated");
         
         // Print the report location for manual inspection

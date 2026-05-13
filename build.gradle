@@ -3,11 +3,11 @@ plugins {
     id 'com.gradle.plugin-publish' version '1.2.1'
     id 'signing'
     id 'maven-publish'
-    id 'org.jreleaser' version '1.18.0'
+    id 'org.jreleaser' version '1.24.0'
 }
 
 group = 'io.github.mov2day'
-version = '0.3.12'
+version = '3.13'
 
 java {
     sourceCompatibility = JavaVersion.VERSION_17
@@ -149,6 +149,10 @@ dependencies {
     implementation 'org.testng:testng:7.10.2'
     implementation 'javax.inject:javax.inject:1'
     implementation 'com.google.code.gson:gson:2.10.1'
+    implementation platform('io.opentelemetry:opentelemetry-bom:1.61.0')
+    implementation 'io.opentelemetry:opentelemetry-api'
+    implementation 'io.opentelemetry:opentelemetry-sdk'
+    implementation 'io.opentelemetry:opentelemetry-exporter-otlp'
     testImplementation 'org.junit.jupiter:junit-jupiter:5.10.2'
     testImplementation 'org.mockito:mockito-core:5.10.0'
     testImplementation 'org.mockito:mockito-junit-jupiter:5.10.0'
