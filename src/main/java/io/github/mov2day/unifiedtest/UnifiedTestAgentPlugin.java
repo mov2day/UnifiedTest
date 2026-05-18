@@ -234,11 +234,16 @@ public class UnifiedTestAgentPlugin implements Plugin<Project> {
                 }
             });
 
-            String reportTaskName = "unifiedTestFinalize" + Character.toUpperCase(testTask.getName().charAt(0)) + testTask.getName().substring(1);
-            TaskProvider<org.gradle.api.DefaultTask> finalizeTask = project.getTasks().register(reportTaskName, org.gradle.api.DefaultTask.class, finalize -> {
-                finalize.setGroup("verification");
-                finalize.setDescription("Finalize UnifiedTest reporting for " + testTask.getName());
-            });
+            String reportTaskName = "unifiedTestFinalize" + testTask.getName();
+            TaskProvider<org.gradle.api.DefaultTask> finalizeTask;
+            if (project.getTasks().findByName(reportTaskName) != null) {
+                finalizeTask = project.getTasks().named(reportTaskName, org.gradle.api.DefaultTask.class);
+            } else {
+                finalizeTask = project.getTasks().register(reportTaskName, org.gradle.api.DefaultTask.class, finalize -> {
+                    finalize.setGroup("verification");
+                    finalize.setDescription("Finalize UnifiedTest reporting for " + testTask.getName());
+                });
+            }
 
             testTask.finalizedBy(finalizeTask);
 

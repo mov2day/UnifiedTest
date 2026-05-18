@@ -11,6 +11,7 @@ import java.nio.file.Path;
 
 import static org.gradle.testkit.runner.TaskOutcome.SUCCESS;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class UnifiedTestPluginFunctionalTest {
@@ -168,6 +169,7 @@ class UnifiedTestPluginFunctionalTest {
 
         BuildResult result = runGradleAndFail("test");
 
+        assertNotNull(result.task(":test"), "Expected :test task to be part of the build");
         assertEquals(org.gradle.testkit.runner.TaskOutcome.FAILED, result.task(":test").getOutcome());
         assertGeneratedReportsContain("FAIL", "FailingTest");
     }
