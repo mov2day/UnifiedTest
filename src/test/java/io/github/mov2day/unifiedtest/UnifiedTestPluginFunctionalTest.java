@@ -142,6 +142,36 @@ class UnifiedTestPluginFunctionalTest {
         assertGeneratedReportsContain("Cucumber", "happy path");
     }
 
+    @Test
+    void generatesReportsWhenTestTaskFails() throws Exception {
+        writeSettings();
+        writeBuild("""
+            plugins {
+                id 'java'
+                id 'io.github.mov2day.unifiedtest'
+            }
+
+            repositories { mavenCentral() }
+
+            dependencies {
+                testImplementation 'org.junit.jupiter:junit-jupiter:5.10.2'
+            }
+            """);
+        write("src/test/java/example/FailingTest.java", """
+            package example;
+            import org.junit.jupiter.api.Test;
+            import static org.junit.jupiter.api.Assertions.assertTrue;
+            class FailingTest {
+                @Test void fails() { assertTrue(false, "intentional failure"); }
+            }
+            """);
+
+        BuildResult result = runGradleAndFail("test");
+
+        assertEquals(org.gradle.testkit.runner.TaskOutcome.FAILED, result.task(":test").getOutcome());
+        assertGeneratedReportsContain("FAIL", "FailingTest");
+    }
+
     private BuildResult runGradle(String... args) {
         return GradleRunner.create()
             .withProjectDir(projectDir.toFile())
@@ -149,6 +179,15 @@ class UnifiedTestPluginFunctionalTest {
             .withArguments(args)
             .forwardOutput()
             .build();
+    }
+
+    private BuildResult runGradleAndFail(String... args) {
+        return GradleRunner.create()
+            .withProjectDir(projectDir.toFile())
+            .withPluginClasspath()
+            .withArguments(args)
+            .forwardOutput()
+            .buildAndFail();
     }
 
     private void writeSettings() throws Exception {
