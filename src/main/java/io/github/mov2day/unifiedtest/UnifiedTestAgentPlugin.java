@@ -14,6 +14,7 @@ import org.gradle.api.Action;
 import org.gradle.api.Plugin;
 import org.gradle.api.Project;
 import org.gradle.api.tasks.testing.Test;
+import org.gradle.api.tasks.TaskProvider;
 import org.gradle.api.provider.Property;
 import org.gradle.api.model.ObjectFactory;
 import javax.inject.Inject;
@@ -233,8 +234,21 @@ public class UnifiedTestAgentPlugin implements Plugin<Project> {
                 }
             });
 
-            // Push results to test management systems after test execution and generate reports here
-            testTask.doLast(task -> {
+            String reportTaskName = "unifiedTestFinalize" + testTask.getName();
+            TaskProvider<org.gradle.api.DefaultTask> finalizeTask;
+            if (project.getTasks().findByName(reportTaskName) != null) {
+                finalizeTask = project.getTasks().named(reportTaskName, org.gradle.api.DefaultTask.class);
+            } else {
+                finalizeTask = project.getTasks().register(reportTaskName, org.gradle.api.DefaultTask.class, finalize -> {
+                    finalize.setGroup("verification");
+                    finalize.setDescription("Finalize UnifiedTest reporting for " + testTask.getName());
+                });
+            }
+
+            testTask.finalizedBy(finalizeTask);
+
+            // Push results to test management systems and generate reports in a finalizer task so this still runs when tests fail.
+            finalizeTask.configure(task -> task.doLast(action -> {
                 String runId = UUID.randomUUID().toString();
                 String serviceName = resolveServiceName(project, config);
                 boolean telemetryEnabled = config.getTelemetry().getEnabled().get();
@@ -268,7 +282,7 @@ public class UnifiedTestAgentPlugin implements Plugin<Project> {
                 if (config.getDashboardEnabled().get()) {
                     GrafanaDashboardGenerator.generate(project, testTask, collector, serviceName, runId);
                 }
-            });
+            }));
         });
     }
 
