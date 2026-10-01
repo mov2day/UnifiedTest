@@ -1,8 +1,11 @@
 package io.github.mov2day.unifiedtest.collector;
 
 import java.util.Collections;
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
+import io.github.mov2day.unifiedtest.intelligence.TestIdentity;
 
 /**
  * Represents the result of a single test execution.
@@ -24,6 +27,10 @@ public class UnifiedTestResult {
     /** The framework that produced this result */
     public final String framework;
     private final Map<String, String> metadata = new LinkedHashMap<>();
+    private final String testId;
+    private final String testClassId;
+    private final List<String> intelligenceSignals = new ArrayList<>();
+    private String failureFingerprint;
 
     /**
      * Creates a new test result with the specified details.
@@ -43,6 +50,8 @@ public class UnifiedTestResult {
         this.stackTrace = stackTrace;
         this.duration = duration;
         this.framework = framework == null || framework.isBlank() ? "unknown" : framework;
+        this.testId = TestIdentity.testId(this.framework, className, testName);
+        this.testClassId = TestIdentity.testClassId(this.framework, className);
     }
 
     /**
@@ -82,6 +91,27 @@ public class UnifiedTestResult {
         return Collections.unmodifiableMap(metadata);
     }
 
+    /** A stable framework-aware identity for one test execution. */
+    public String getTestId() { return testId; }
+
+    /** Stable identity used for class/spec/suite-level impact recommendations. */
+    public String getTestClassId() { return testClassId; }
+
+    public void setIntelligenceSignals(List<String> signals) {
+        intelligenceSignals.clear();
+        if (signals != null) intelligenceSignals.addAll(signals);
+    }
+
+    public List<String> getIntelligenceSignals() {
+        return Collections.unmodifiableList(intelligenceSignals);
+    }
+
+    public void setFailureFingerprint(String fingerprint) {
+        this.failureFingerprint = fingerprint;
+    }
+
+    public String getFailureFingerprint() { return failureFingerprint; }
+
     /**
      * Returns this result if it already has a framework, otherwise returns a copy with the supplied framework.
      */
@@ -91,6 +121,8 @@ public class UnifiedTestResult {
         }
         UnifiedTestResult copy = new UnifiedTestResult(className, testName, status, failureMessage, stackTrace, duration, frameworkName);
         metadata.forEach(copy::addMetadata);
+        copy.setIntelligenceSignals(intelligenceSignals);
+        copy.setFailureFingerprint(failureFingerprint);
         return copy;
     }
 }

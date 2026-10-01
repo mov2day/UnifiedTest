@@ -26,6 +26,11 @@ public class JsonReportGenerator {
     }
 
     public static void generate(Project project, Test testTask, UnifiedTestResultCollector collector, String serviceName, String runId) {
+        generate(project, testTask, collector, serviceName, runId, false);
+    }
+
+    public static void generate(Project project, Test testTask, UnifiedTestResultCollector collector, String serviceName,
+                                String runId, boolean intelligenceEnabled) {
         File reportFile = project.getLayout()
             .getBuildDirectory()
             .file("unifiedtest/reports/results.json")
@@ -34,13 +39,14 @@ public class JsonReportGenerator {
         reportFile.getParentFile().mkdirs();
         
         try (FileWriter writer = new FileWriter(reportFile)) {
-            GSON.toJson(buildReport(testTask, collector.getResults(), serviceName, runId), writer);
+            GSON.toJson(buildReport(testTask, collector.getResults(), serviceName, runId, intelligenceEnabled), writer);
         } catch (IOException e) {
             project.getLogger().error("Failed to write UnifiedTest JSON report", e);
         }
     }
 
-    private static JsonObject buildReport(Test testTask, List<UnifiedTestResult> results, String serviceName, String runId) {
+    private static JsonObject buildReport(Test testTask, List<UnifiedTestResult> results, String serviceName, String runId,
+                                          boolean intelligenceEnabled) {
         JsonObject report = new JsonObject();
         report.addProperty("serviceName", serviceName);
         report.addProperty("runId", runId);
@@ -54,6 +60,12 @@ public class JsonReportGenerator {
         summary.addProperty("durationMs", results.stream().mapToLong(r -> r.duration).sum());
         report.add("summary", summary);
 
+        JsonObject intelligence = new JsonObject();
+        intelligence.addProperty("enabled", intelligenceEnabled);
+        intelligence.addProperty("flaky", results.stream().filter(result -> result.getIntelligenceSignals().contains("FLAKY")).count());
+        intelligence.addProperty("regressions", results.stream().filter(result -> result.getIntelligenceSignals().contains("REGRESSION")).count());
+        report.add("intelligence", intelligence);
+
         JsonArray testArray = new JsonArray();
         for (UnifiedTestResult result : results) {
             JsonObject test = new JsonObject();
@@ -62,6 +74,16 @@ public class JsonReportGenerator {
             test.addProperty("status", result.status);
             test.addProperty("durationMs", result.duration);
             test.addProperty("framework", result.framework);
+            test.addProperty("testId", result.getTestId());
+            test.addProperty("testClassId", result.getTestClassId());
+            if (!result.getIntelligenceSignals().isEmpty()) {
+                JsonArray signals = new JsonArray();
+                result.getIntelligenceSignals().forEach(signals::add);
+                test.add("intelligenceSignals", signals);
+            }
+            if (result.getFailureFingerprint() != null) {
+                test.addProperty("failureFingerprint", result.getFailureFingerprint());
+            }
             if (result.failureMessage != null) {
                 test.addProperty("failureMessage", result.failureMessage);
             }

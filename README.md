@@ -1,35 +1,3 @@
-# UnifiedTest Agent
-
-UnifiedTest is a Java-based Gradle plugin for advanced test automation observability and reporting. It supports JUnit4, JUnit5, and TestNG. Spock and Cucumber are not included in this version.
-
-## Features
-- Dynamic detection of supported test frameworks (JUnit4, JUnit5, TestNG)
-- Pretty console output
-- JSON and HTML reporting
-- OpenTelemetry export to OTLP endpoints
-- Extensible via SPI (Service Provider Interface)
-
-## Getting Started
-1. Apply the plugin in your Gradle project:
-   ```groovy
-   plugins {
-       id 'com.unifiedtest' version '0.1.0-SNAPSHOT'
-   }
-   ```
-2. Run your tests as usual:
-   ```sh
-   ./gradlew test
-   ```
-3. View reports in `build/unifiedtest/` (JSON and HTML).
-
-## Extending UnifiedTest
-Implement the `UnifiedTestExtension` interface and register your implementation using Java's SPI mechanism to add custom reporting or observability logic.
-
-## Development
-- Run all tests: `./gradlew test`
-- Add new features in the modular packages: `framework`, `collector`, `reporting`, `extension`.
-- Contributions are welcome!
-
 # 🔍 UnifiedTest
 
 **UnifiedTest** is a versatile **Java-based Gradle plugin** for advanced test automation observability and reporting. It supports **JUnit**, **TestNG**, and more—offering beautiful console reporting, JSON/HTML reports, and OpenTelemetry trace export.
@@ -55,14 +23,14 @@ Implement the `UnifiedTestExtension` interface and register your implementation 
 ### 🛠 Gradle (Kotlin DSL)
 ```kotlin
 plugins {
-    id("io.github.mov2day.unifiedtest") version "0.3.12"
+    id("io.github.mov2day.unifiedtest") version "3.14"
 }
 ```
 
 ### 🛠 Gradle (Groovy DSL)
 ```groovy
 plugins {
-    id 'io.github.mov2day.unifiedtest' version '0.3.12'
+    id 'io.github.mov2day.unifiedtest' version '3.14'
 }
 ```
 
@@ -85,8 +53,44 @@ unifiedTest {
     htmlEnabled = true
     dashboardEnabled = true
     theme = "mocha" // "standard", "minimal", "mocha"
+
+    intelligence {
+        enabled = true
+        baselineRef = "origin/main"
+        historyLimit = 30
+    }
 }
 ```
+
+### UnifiedTest Autopilot
+
+Autopilot is a local, advisory change-aware test intelligence mode. It never filters tests,
+quarantines failures, changes build outcomes, or sends data to a service.
+
+```sh
+# Build a class-to-test coverage map with JaCoCo (enabled automatically for Autopilot).
+./gradlew unifiedTestProfileCoverage
+
+# Print advisory --tests commands for files changed from origin/main and write impact.json.
+./gradlew unifiedTestImpact
+```
+
+Autopilot stores its local coverage map and bounded run history in
+`.gradle/unifiedtest/intelligence/`. It produces:
+
+- `build/unifiedtest/intelligence/impact.json` — `RUN_SELECTED_TESTS` or a safe `RUN_FULL_SUITE` fallback.
+- `build/unifiedtest/intelligence/autopilot.json` — stable test IDs, failure signals, trace links, and suggested review action.
+- `build/unifiedtest/intelligence/dashboard.html` — a local reliability dashboard for bounded historic test-task observations.
+
+Normal completed runs are classified using local history: `NEW_TEST`, `REGRESSION`,
+`FLAKY` (a candidate based on recent mixed outcomes), and `KNOWN_FAILURE`. Missing/stale coverage, unknown baseline refs, build-resource
+changes, and unmapped production classes always recommend the full suite.
+
+The history dashboard prioritizes regressions, flaky candidates, known failures, recurring
+failure fingerprints, and recent pass-rate trends. History remains local and bounded by
+`historyLimit`; it retains task/class/test labels, stable IDs, statuses, timestamps, and
+normalized fingerprints only. It never persists failure messages, raw stack traces,
+credentials, attachments, or trace payloads.
 
 ## 🔗 Test Management Integration
 
@@ -203,8 +207,8 @@ UnifiedTest optimizes test result submission by batching results and sending the
 | JUnit 4  | ✅ Full   | `RunListener`             |
 | JUnit 5  | ✅ Full   | `TestExecutionListener`   |
 | TestNG   | ✅ Full   | `ITestListener`           |
-| Spock    | 🚧 In Dev | Groovy extensions         |
-| Cucumber | 🚧 Planned| Formatter/Reporter APIs   |
+| Spock    | ✅ Supported | JUnit Platform listener; edge-case coverage is planned |
+| Cucumber | ✅ Supported | JUnit Platform listener; edge-case coverage is planned |
 
 ---
 
@@ -341,6 +345,7 @@ unifiedTest.telemetry {
 | JSON   | `build/unifiedtest/reports/results.json` |
 | HTML   | `build/unifiedtest/reports/index.html`  |
 | Grafana dashboard | `build/unifiedtest/dashboard/grafana-dashboard.json` |
+| Autopilot history dashboard | `build/unifiedtest/intelligence/dashboard.html` |
 
 HTML reports include search, status/framework filters, duration sorting, failure details, service/run metadata, and optional trace links.
 
@@ -465,7 +470,7 @@ UnifiedTest now works with Maven projects! Follow these steps to set up UnifiedT
 <dependency>
     <groupId>io.github.mov2day</groupId>
     <artifactId>unifiedtest</artifactId>
-    <version>0.3.12</version>
+    <version>3.14</version>
     <scope>test</scope>
 </dependency>
 ```

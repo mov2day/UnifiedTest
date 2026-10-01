@@ -35,7 +35,7 @@ public class JsonReportGeneratorTest {
         collector.addResult(new UnifiedTestResult("TestClass", "testName", "SUCCESS"));
 
         // Generate report
-        JsonReportGenerator.generate(project, testTask, collector);
+        JsonReportGenerator.generate(project, testTask, collector, "service", "run", true);
         
         // Verify report file exists and contains content
         File reportFile = project.getLayout().getBuildDirectory().file("unifiedtest/reports/results.json").get().getAsFile();
@@ -45,5 +45,6 @@ public class JsonReportGeneratorTest {
         assertTrue(content.contains("testName"), "Report should contain test name");
         assertTrue(content.contains("SUCCESS"), "Report should contain test result");
         assertTrue(content.contains("\"summary\""), "Report should include summary");
+        assertTrue(content.contains("\"enabled\": true"), "Configured intelligence state should be reported even without signals");
     }
 }

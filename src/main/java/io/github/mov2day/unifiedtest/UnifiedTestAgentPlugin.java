@@ -10,6 +10,12 @@ import io.github.mov2day.unifiedtest.extension.ExtensionInvoker;
 import io.github.mov2day.unifiedtest.extension.TestManagementExtension;
 import io.github.mov2day.unifiedtest.reporting.testmanagement.TestManagementSystemFactory;
 import io.github.mov2day.unifiedtest.reporting.testmanagement.TestManagementSystem;
+import io.github.mov2day.unifiedtest.intelligence.AutopilotAnalysis;
+import io.github.mov2day.unifiedtest.intelligence.AutopilotHistoryDashboardGenerator;
+import io.github.mov2day.unifiedtest.intelligence.AutopilotReportGenerator;
+import io.github.mov2day.unifiedtest.intelligence.AutopilotTasks;
+import io.github.mov2day.unifiedtest.intelligence.IntelligenceConfig;
+import io.github.mov2day.unifiedtest.intelligence.RunHistoryStore;
 import org.gradle.api.Action;
 import org.gradle.api.Plugin;
 import org.gradle.api.Project;
@@ -26,6 +32,7 @@ import io.github.mov2day.unifiedtest.framework.CucumberAdapter;
 import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
+import java.nio.file.Path;
 
 /**
  * Main plugin class for UnifiedTest that provides test execution monitoring and reporting.
@@ -47,6 +54,7 @@ public class UnifiedTestAgentPlugin implements Plugin<Project> {
         private final Property<String> telemetryTraceBaseUrl;
         private final Property<Boolean> dashboardEnabled;
         private final TelemetryConfig telemetry;
+        private final IntelligenceConfig intelligence;
 
         /**
          * Creates a new configuration instance.
@@ -64,6 +72,7 @@ public class UnifiedTestAgentPlugin implements Plugin<Project> {
             this.telemetryTraceBaseUrl = objects.property(String.class).convention("");
             this.dashboardEnabled = objects.property(Boolean.class).convention(true);
             this.telemetry = new TelemetryConfig(objects, telemetryEnabled, telemetryEndpoint, telemetryServiceName, telemetryTraceBaseUrl);
+            this.intelligence = objects.newInstance(IntelligenceConfig.class);
         }
 
         /**
@@ -134,6 +143,13 @@ public class UnifiedTestAgentPlugin implements Plugin<Project> {
             action.execute(telemetry);
         }
 
+        public IntelligenceConfig getIntelligence() { return intelligence; }
+
+        /** Nested intelligence DSL: unifiedTest { intelligence { enabled = true } }. */
+        public void intelligence(Action<? super IntelligenceConfig> action) {
+            action.execute(intelligence);
+        }
+
         public static class TelemetryConfig {
             private final Property<Boolean> enabled;
             private final Property<String> endpoint;
@@ -179,6 +195,9 @@ public class UnifiedTestAgentPlugin implements Plugin<Project> {
 
         // 2. Configure each test task
         project.getTasks().withType(Test.class).configureEach(testTask -> {
+            if (testTask.getName().startsWith("unifiedTestProfile")) {
+                return;
+            }
             final UnifiedTestResultCollector collector = new UnifiedTestResultCollector();
 
             // Attach the collector to the test task for later retrieval, only if not already present
@@ -233,13 +252,20 @@ public class UnifiedTestAgentPlugin implements Plugin<Project> {
                 }
             });
 
-            // Push results to test management systems after test execution and generate reports here
-            testTask.doLast(task -> {
+            Action<org.gradle.api.Task> writeOutputs = ignored -> {
                 String runId = UUID.randomUUID().toString();
                 String serviceName = resolveServiceName(project, config);
                 boolean telemetryEnabled = config.getTelemetry().getEnabled().get();
                 String telemetryEndpoint = config.getTelemetry().getEndpoint().getOrElse("");
                 String traceBaseUrl = config.getTelemetry().getTraceBaseUrl().getOrElse("");
+                AutopilotAnalysis autopilotAnalysis = AutopilotAnalysis.disabled();
+                RunHistoryStore historyStore = null;
+                if (config.getIntelligence().getEnabled().getOrElse(false)) {
+                    Path stateDirectory = AutopilotTasks.stateDirectory(project);
+                    historyStore = new RunHistoryStore(stateDirectory);
+                    autopilotAnalysis = historyStore.analyzeAndAppend(
+                        runId, testTask.getName(), collector.getResults(), config.getIntelligence().getHistoryLimit().getOrElse(30));
+                }
 
                 for (TestManagementSystem system : testManagementFactory.getAllSystems()) {
                     if (system.isConfigured()) {
@@ -258,17 +284,36 @@ public class UnifiedTestAgentPlugin implements Plugin<Project> {
                     OpenTelemetryExporter.export(project, testTask, collector, telemetryEndpoint, serviceName, runId, traceBaseUrl);
                 }
 
+                if (autopilotAnalysis.isEnabled()) {
+                    // Telemetry enriches results with trace URLs, so render the agent-facing report after export.
+                    AutopilotReportGenerator.generate(project.getBuildDir().toPath(), runId, collector.getResults(), autopilotAnalysis);
+                    AutopilotHistoryDashboardGenerator.generate(project.getBuildDir().toPath(), historyStore.readSnapshot(), config.getHtmlEnabled().get());
+                }
+
                 // Generate reports directly using the collector available here (execution of this task)
                 if (config.getJsonEnabled().get()) {
-                    JsonReportGenerator.generate(project, testTask, collector, serviceName, runId);
+                    JsonReportGenerator.generate(project, testTask, collector, serviceName, runId, autopilotAnalysis.isEnabled());
                 }
                 if (config.getHtmlEnabled().get()) {
-                    HtmlReportGenerator.generate(project, testTask, collector, serviceName, runId, telemetryEnabled, traceBaseUrl);
+                    HtmlReportGenerator.generate(project, testTask, collector, serviceName, runId, telemetryEnabled, traceBaseUrl,
+                        autopilotAnalysis.isEnabled());
                 }
                 if (config.getDashboardEnabled().get()) {
                     GrafanaDashboardGenerator.generate(project, testTask, collector, serviceName, runId);
                 }
+            };
+            testTask.doLast(writeOutputs);
+            // Test throws before doLast for a failing suite. The completion hook covers that
+            // path and deliberately leaves Gradle's original failure intact.
+            project.getGradle().getTaskGraph().afterTask(task -> {
+                if (task == testTask && task.getState().getFailure() != null) writeOutputs.execute(task);
             });
+        });
+
+        project.afterEvaluate(ignored -> {
+            if (config.getIntelligence().getEnabled().getOrElse(false)) {
+                AutopilotTasks.register(project, config.getIntelligence(), config.getFramework().getOrElse(""));
+            }
         });
     }
 

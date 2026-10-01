@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>UnifiedTest Agent</title>
+  <title>UnifiedTest 3.14</title>
   <style>
     body { font-family: system-ui, sans-serif; margin: 2rem; background: #fafbfc; color: #222; }
     h1, h2, h3 { color: #2d3a4a; }
@@ -17,14 +17,14 @@
   </style>
 </head>
 <body>
-  <h1>UnifiedTest Agent</h1>
-  <p>UnifiedTest is a Java-based Gradle plugin for advanced test automation observability and reporting. It supports JUnit4, JUnit5, and TestNG. Spock and Cucumber are not included in this version.</p>
+  <h1>UnifiedTest 3.14</h1>
+  <p>UnifiedTest is a Java-based Gradle plugin for test observability, local change-aware intelligence, and reporting across JUnit4, JUnit5, TestNG, Spock, and Cucumber.</p>
 
   <h2>Features</h2>
   <ul>
     <li>Dynamic detection of supported test frameworks (JUnit4, JUnit5, TestNG)</li>
     <li>Pretty console output</li>
-    <li>JSON and HTML reporting</li>
+    <li>JSON, HTML, Grafana, and local Autopilot history dashboards</li>
     <li>OpenTelemetry export to OTLP endpoints</li>
     <li>Extensible via SPI (Service Provider Interface)</li>
   </ul>
@@ -33,7 +33,7 @@
   <ol>
     <li>Apply the plugin in your Gradle project:
       <pre><code>plugins {
-    id 'com.unifiedtest' version '0.1.0-SNAPSHOT'
+    id 'io.github.mov2day.unifiedtest' version '3.14'
 }</code></pre>
     </li>
     <li>Run your tests as usual:
@@ -41,6 +41,16 @@
     </li>
     <li>View reports in <code>build/unifiedtest/</code> (JSON and HTML).</li>
   </ol>
+
+  <h2>Autopilot History Dashboard</h2>
+  <p>Enable local Autopilot intelligence to build a bounded reliability timeline for each completed Gradle <code>Test</code> task. It highlights regressions, flaky candidates, known failures, recurring fingerprints, and pass-rate trends without persisting raw failure text or attachments.</p>
+  <pre><code>unifiedTest {
+    intelligence {
+        enabled = true
+        historyLimit = 30
+    }
+}</code></pre>
+  <p>Generated output: <code>build/unifiedtest/intelligence/dashboard.html</code>. <a href="build/sample-report-project/build/unifiedtest/intelligence/dashboard.html">Open the local sample dashboard</a>.</p>
 
   <h2>Extending UnifiedTest</h2>
   <p>Implement the <code>UnifiedTestExtension</code> interface and register your implementation using Java's SPI mechanism to add custom reporting or observability logic.</p>
@@ -72,11 +82,11 @@
   <h2>🔧 Installation</h2>
   <h3>🛠 Gradle (Kotlin DSL)</h3>
   <pre><code>plugins {
-    id("io.github.mov2day.unifiedtest") version "0.3.12"
+    id("io.github.mov2day.unifiedtest") version "3.14"
 }</code></pre>
   <h3>🛠 Gradle (Groovy DSL)</h3>
   <pre><code>plugins {
-    id 'io.github.mov2day.unifiedtest' version '0.3.12'
+    id 'io.github.mov2day.unifiedtest' version '3.14'
 }</code></pre>
 
   <h2>⚙️ Configuration</h2>
@@ -92,6 +102,11 @@
     reports {
         jsonEnabled = true
         htmlEnabled = true
+    }
+
+    intelligence {
+        enabled = true
+        historyLimit = 30
     }
 
     theme = "mocha" // "standard", "minimal", "mocha"
@@ -161,8 +176,10 @@ Summary:
     <tr><th>Format</th><th>Output Path</th></tr>
     <tr><td>JSON</td><td><code>build/unifiedtest/reports/results.json</code></td></tr>
     <tr><td>HTML</td><td><code>build/unifiedtest/reports/index.html</code></td></tr>
+    <tr><td>Autopilot history</td><td><code>build/unifiedtest/intelligence/dashboard.html</code></td></tr>
+    <tr><td>Grafana</td><td><code>build/unifiedtest/dashboard/grafana-dashboard.json</code></td></tr>
   </table>
-  <p>HTML reports offer collapsible suites, duration tracking, and color-coded result sections.</p>
+  <p>HTML reports offer collapsible suites, duration tracking, and color-coded result sections. Autopilot history remains local and bounded; it stores readable test labels, statuses, timestamps, and normalized fingerprints only.</p>
 
   <h2>🤖 CI/CD Integration</h2>
   <h3>GitHub Actions Example</h3>
@@ -203,6 +220,7 @@ Summary:
     <li>[x] OpenTelemetry export</li>
     <li>[x] Dynamic framework detection</li>
     <li>[x] Grafana dashboard JSON</li>
+    <li>[x] Local Autopilot history dashboard</li>
     <li>[x] Spock &amp; Cucumber detection via JUnit Platform</li>
     <li>[ ] Dedicated Spock/Cucumber edge-case coverage beyond smoke projects</li>
     <li>[ ] Retry analyzer &amp; flaky test tracking</li>

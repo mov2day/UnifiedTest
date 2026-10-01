@@ -94,10 +94,15 @@ class HtmlReportGeneratorTest {
         assertTrue(content.contains("Division by zero"), "Should contain error message");
         assertTrue(content.contains("java.lang.ArithmeticException"), "Should contain stack trace");
         
-        // Verify summary statistics
-        assertTrue(content.contains("<strong>3</strong>"), "Should show total of 3 tests");
-        assertTrue(content.contains("<strong>1</strong>"), "Should show 1 passed test");
+        // Verify the release-decision brief
+        assertTrue(content.contains("Status"), "Should lead with a run-status summary");
+        assertTrue(content.contains("<dt>Executed</dt><dd>3</dd>"), "Should show total of 3 tests");
+        assertTrue(content.contains("<dt>Evidence</dt><dd>0 files</dd>"), "Should show current evidence count");
         assertTrue(content.contains("33.3%"), "Should show correct percentage");
+        assertTrue(content.contains("health-bar"), "Should use an explicit segmented health meter");
+        assertTrue(content.contains("1 passed"), "Should label the passed segment");
+        assertTrue(content.contains("1 skipped"), "Should label the skipped segment");
+        assertTrue(!content.contains("conic-gradient(var(--pass)"), "Should not render the ambiguous donut chart");
         assertTrue(content.contains("statusFilter"), "Should contain status filter");
         assertTrue(content.contains("frameworkFilter"), "Should contain framework filter");
     }
@@ -112,8 +117,15 @@ class HtmlReportGeneratorTest {
         assertTrue(reportFile.exists(), "Report file should be generated even with no results");
 
         String content = Files.readString(reportFile.toPath());
-        assertTrue(content.contains("<strong>0</strong>"), "Should show zero tests");
+        assertTrue(content.contains("<dt>Executed</dt><dd>0</dd>"), "Should show zero tests");
         assertTrue(content.contains("0.0%"), "Should show 0% for all categories");
+    }
+
+    @org.junit.jupiter.api.Test
+    void shouldLinkToTheAutopilotDashboardWhenIntelligenceIsEnabled() throws Exception {
+        HtmlReportGenerator.generate(project, testTask, collector, "service", "run", false, "", true);
+        File reportFile = project.getLayout().getBuildDirectory().file("unifiedtest/reports/index.html").get().getAsFile();
+        assertTrue(Files.readString(reportFile.toPath()).contains("../intelligence/dashboard.html"));
     }
 
     @org.junit.jupiter.api.Test

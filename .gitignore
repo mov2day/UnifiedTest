@@ -44,3 +44,4 @@ copilot-instructions.md
 bundle.sh
 jreleaser.yml
 UnifiedTestAgent-*.zip
+/.codex

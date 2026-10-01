@@ -106,9 +106,8 @@ public class UnifiedTestResultCollector implements TestListener, ITestResultColl
      */
     public void addResult(io.github.mov2day.unifiedtest.collector.UnifiedTestResult result) {
         result = result.withFramework(frameworkName);
-        String key = result.className + "." + result.testName;
-        if (!resultMap.containsKey(key)) {
-            resultMap.put(key, result);
+        String key = result.getTestId();
+        if (resultMap.putIfAbsent(key, result) == null) {
             results.add(result);
             
             // Notify callback if set
@@ -125,7 +124,7 @@ public class UnifiedTestResultCollector implements TestListener, ITestResultColl
      * @return true if a result exists for this test
      */
     public boolean hasResult(String className, String testName) {
-        return resultMap.containsKey(className + "." + testName);
+        return resultMap.containsKey(io.github.mov2day.unifiedtest.intelligence.TestIdentity.testId(frameworkName, className, testName));
     }
 
     /**

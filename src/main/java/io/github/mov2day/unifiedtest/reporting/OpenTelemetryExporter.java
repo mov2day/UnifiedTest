@@ -108,6 +108,15 @@ public class OpenTelemetryExporter {
         span.setAttribute("test.method", nullToUnknown(result.testName));
         span.setAttribute("test.status", nullToUnknown(result.status));
         span.setAttribute("test.duration_ms", result.duration);
+        span.setAttribute("test.id", result.getTestId());
+        span.setAttribute("test.class_id", result.getTestClassId());
+        span.setAttribute("test.flaky", result.getIntelligenceSignals().contains("FLAKY"));
+        if (!result.getIntelligenceSignals().isEmpty()) {
+            span.setAttribute("test.intelligence.signals", String.join(",", result.getIntelligenceSignals()));
+        }
+        if (result.getFailureFingerprint() != null) {
+            span.setAttribute("test.failure_fingerprint", result.getFailureFingerprint());
+        }
         if (result.failureMessage != null && !result.failureMessage.isBlank()) {
             span.setAttribute("test.failure_message", result.failureMessage);
         }
@@ -131,7 +140,7 @@ public class OpenTelemetryExporter {
         summary.setAttribute("test.passed", passed);
         summary.setAttribute("test.failed", failed);
         summary.setAttribute("test.skipped", skipped);
-        summary.setAttribute("test.flaky", 0L);
+        summary.setAttribute("test.flaky", results.stream().filter(result -> result.getIntelligenceSignals().contains("FLAKY")).count());
         summary.setAttribute("test.duration_ms", totalDuration);
         if (failed > 0) {
             summary.setStatus(StatusCode.ERROR, "Test run had failures");
